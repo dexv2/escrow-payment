@@ -12,7 +12,7 @@
 3. I want to cancel the transaction if the product is not as advertised.
 
 ### Delivery Driver POV:
-1. I wan't to earn by delivering products from **Sellers** to **Buyers**.
+1. I want to earn by delivering products from **Sellers** to **Buyers**.
 2. I'm afraid to get scammed if I pay upfront on behalf of the **Buyer** and I later find out the product is not legitimate.
 3. If the transaction gets cancelled, means I have to return the product, so I want to be compensated for the return delivery.
 
@@ -42,4 +42,3 @@ This system is designed to prevent fraudulent activities involving specifically 
     5. Prevented the fraudulent buying and the **Buyer** gets penalized.
   - The **Delivery Driver** will have the authority to decide who (**Buyer** or **Seller**) acts fraudulently.
 - The **Delivery Driver** cannot take the product without delivering as they will not get their deposit back and that's not a wise thing to do.
-
