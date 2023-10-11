@@ -9,6 +9,9 @@ contract EscrowPayment {
     error EscrowPayment__NotASeller();
     error EscrowPayment__NotADeliveryDriver();
     error EscrowPayment__TransferFromFailed();
+    error EscrowPayment__BuyerAlreadyDeposited();
+    error EscrowPayment__SellerAlreadyDeposited();
+    error EscrowPayment__DeliveryDriverAlreadyDeposited();
 
     enum DepositorType {BUYER, SELLER, DELIVERY_DRIVER};
 
@@ -77,9 +80,24 @@ contract EscrowPayment {
 
     function receiveReturnedProduct() external onlySeller {}
 
-    function _depositAsBuyer() private {}
+    function _depositAsBuyer() private {
+        if (s_buyer != address(0)) {
+            revert EscrowPayment__BuyerAlreadyDeposited();
+        }
+        s_buyer = msg.sender();
+    }
 
-    function _depositAsSeller() private {}
+    function _depositAsSeller() private {
+        if (s_seller != address(0)) {
+            revert EscrowPayment__SellerAlreadyDeposited();
+        }
+        s_seller = msg.sender();
+    }
 
-    function _depositAsDeliveryDriver() private {}
+    function _depositAsDeliveryDriver() private {
+        if (s_deliveryDriver != address(0)) {
+            revert EscrowPayment__DeliveryDriverAlreadyDeposited();
+        }
+        s_deliveryDriver = msg.sender();
+    }
 }
