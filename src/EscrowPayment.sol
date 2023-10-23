@@ -11,11 +11,13 @@ contract EscrowPayment {
     error EscrowPayment__NotABuyer();
     error EscrowPayment__NotASeller();
     error EscrowPayment__NotADeliveryDriver();
+    error EscrowPayment__TransferFailed();
     error EscrowPayment__TransferFromFailed();
     error EscrowPayment__BuyerAlreadyDeposited();
     error EscrowPayment__SellerAlreadyDeposited();
     error EscrowPayment__DeliveryDriverAlreadyDeposited();
     error EscrowPayment__IncompleteDeposits();
+    error EscrowPayment__NoOutstandingAmountWithdrawable();
 
     ////////////////
     // Enums      //
@@ -34,7 +36,7 @@ contract EscrowPayment {
     //////////////////////////
     // State Variables      //
     //////////////////////////
-    address private s_tokenSelected;
+    IERC20 private immutable i_tokenSelected;
     uint256 private s_price;
     uint8 private s_depositorsCount;
     Depositors private s_depositors;
@@ -46,7 +48,7 @@ contract EscrowPayment {
 
     constructor(uint256 price, address tokenSelected, DepositorType depositorType) {
         s_price = price;
-        s_tokenSelected = tokenSelected;
+        i_tokenSelected = IERC20(tokenSelected);
 
         deposit(depositorType);
     }
@@ -91,13 +93,25 @@ contract EscrowPayment {
             _depositAsDeliveryDriver();
         }
 
-        bool success = IERC20(s_tokenSelected).transferFrom(msg.sender, address(this), s_price);
+        bool success = i_tokenSelected.transferFrom(msg.sender, address(this), s_price);
         if (!success) {
             revert EscrowPayment__TransferFromFailed();
         }
     }
 
-    function withdraw() external {}
+    // follows CEI
+    function withdraw() external {
+        uint256 amountWithdrawable = s_amountWithdrawable[msg.sender];
+        if (amountWithdrawable <= 0) {
+            revert EscrowPayment__NoOutstandingAmountWithdrawable();
+        }
+
+        s_amountWithdrawable[msg.sender] = 0;
+        bool success = i_tokenSelected.transfer(msg.sender, amountWithdrawable);
+        if (!success) {
+            revert EscrowPayment__TransferFailed();
+        }
+    }
 
     function receiveProduct() external onlyBuyer {
         if (s_depositorsCount < 3) {
