@@ -15,23 +15,30 @@ contract EscrowPayment {
     error EscrowPayment__BuyerAlreadyDeposited();
     error EscrowPayment__SellerAlreadyDeposited();
     error EscrowPayment__DeliveryDriverAlreadyDeposited();
+    error EscrowPayment__IncompleteDeposits();
 
     ////////////////
     // Enums      //
     ////////////////
     enum DepositorType {BUYER, SELLER, DELIVERY_DRIVER};
 
+    //////////////////
+    // Structs      //
+    //////////////////
+    Struct Depositors {
+        address buyer;
+        address seller;
+        address deliveryDriver;
+    }
+
     //////////////////////////
     // State Variables      //
     //////////////////////////
-    address private s_buyer;
-    address private s_seller;
-    address private s_deliveryDriver;
     address private s_tokenSelected;
     uint256 private s_price;
     uint8 private s_depositorsCount;
-    mapping (address depositor => uint256 amountWithdrawable) s_amountWithdrwable;
-    mapping (address depositor => bool deposited) s_deposited;
+    Depositors private s_depositors;
+    mapping (address depositor => uint256 amountWithdrawable) private s_amountWithdrwable;
 
     ////////////////////
     // Functions      //
@@ -49,21 +56,21 @@ contract EscrowPayment {
     ////////////////////
 
     modifier onlyBuyer() {
-        if (msg.sender != s_buyer) {
+        if (msg.sender != s_depositors.buyer) {
             revert EscrowPayment__NotABuyer();
         }
         _;
     }
 
     modifier onlySeller() {
-        if (msg.sender != s_seller) {
+        if (msg.sender != s_depositors.seller) {
             revert EscrowPayment__NotASeller();
         }
         _;
     }
 
     modifier onlyDeliveryDriver() {
-        if (msg.sender != s_deliveryDriver) {
+        if (msg.sender != s_depositors.deliveryDriver) {
             revert EscrowPayment__NotADeliveryDriver();
         }
         _;
@@ -92,7 +99,11 @@ contract EscrowPayment {
 
     function withdraw() external {}
 
-    function receiveProduct() external onlyBuyer {}
+    function receiveProduct() external onlyBuyer {
+        if (s_depositorsCount > 3) {
+            revert EscrowPayment__IncompleteDeposits();
+        }
+    }
 
     function cancel() external onlyBuyer {}
 
@@ -107,26 +118,34 @@ contract EscrowPayment {
     ////////////////////////////
 
     function _depositAsBuyer() private {
-        if (s_buyer != address(0)) {
+        if (s_depositors.buyer != address(0)) {
             revert EscrowPayment__BuyerAlreadyDeposited();
         }
-        s_buyer = msg.sender;
+        s_depositors.buyer = msg.sender;
         s_depositorsCount++;
     }
 
     function _depositAsSeller() private {
-        if (s_seller != address(0)) {
+        if (s_depositors.seller != address(0)) {
             revert EscrowPayment__SellerAlreadyDeposited();
         }
-        s_seller = msg.sender;
+        s_depositors.seller = msg.sender;
         s_depositorsCount++;
     }
 
     function _depositAsDeliveryDriver() private {
-        if (s_deliveryDriver != address(0)) {
+        if (s_depositors.deliveryDriver != address(0)) {
             revert EscrowPayment__DeliveryDriverAlreadyDeposited();
         }
-        s_deliveryDriver = msg.sender;
+        s_depositors.deliveryDriver = msg.sender;
         s_depositorsCount++;
+    }
+
+    //////////////////////////////////
+    // External View Functions      //
+    //////////////////////////////////
+
+    function getDepositors() external view returns (Depositors) {
+        return s_depositors;
     }
 }
