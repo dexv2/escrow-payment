@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.18;
+pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -20,12 +20,12 @@ contract EscrowPayment {
     ////////////////
     // Enums      //
     ////////////////
-    enum DepositorType {BUYER, SELLER, DELIVERY_DRIVER};
+    enum DepositorType { BUYER, SELLER, DELIVERY_DRIVER }
 
     //////////////////
     // Structs      //
     //////////////////
-    Struct Depositors {
+    struct Depositors {
         address buyer;
         address seller;
         address deliveryDriver;
@@ -38,7 +38,7 @@ contract EscrowPayment {
     uint256 private s_price;
     uint8 private s_depositorsCount;
     Depositors private s_depositors;
-    mapping (address depositor => uint256 amountWithdrawable) private s_amountWithdrwable;
+    mapping (address depositor => uint256 amountWithdrawable) private s_amountWithdrawable;
 
     ////////////////////
     // Functions      //
@@ -91,7 +91,7 @@ contract EscrowPayment {
             _depositAsDeliveryDriver();
         }
 
-        bool success = IERC20(tokenSelected).transferFrom(msg.sender, address(this), price);
+        bool success = IERC20(s_tokenSelected).transferFrom(msg.sender, address(this), s_price);
         if (!success) {
             revert EscrowPayment__TransferFromFailed();
         }
@@ -100,9 +100,11 @@ contract EscrowPayment {
     function withdraw() external {}
 
     function receiveProduct() external onlyBuyer {
-        if (s_depositorsCount > 3) {
+        if (s_depositorsCount < 3) {
             revert EscrowPayment__IncompleteDeposits();
         }
+        s_amountWithdrawable[s_depositors.seller] = s_price * 2;
+        s_amountWithdrawable[s_depositors.deliveryDriver] = s_price;
     }
 
     function cancel() external onlyBuyer {}
@@ -145,7 +147,7 @@ contract EscrowPayment {
     // External View Functions      //
     //////////////////////////////////
 
-    function getDepositors() external view returns (Depositors) {
+    function getDepositors() external view returns (Depositors memory) {
         return s_depositors;
     }
 }
