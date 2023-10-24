@@ -154,7 +154,9 @@ contract EscrowPayment {
         _settleCourierReturnFee(s_depositors.seller);
     }
 
-    function declineDispute() external onlyCourier hasDispute {}
+    function declineDispute() external onlyCourier hasDispute {
+        _settleCourierReturnFee(s_depositors.buyer);
+    }
 
     function receiveReturnedProduct() external onlySeller {}
 
