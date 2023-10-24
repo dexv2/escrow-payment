@@ -10,19 +10,19 @@ contract EscrowPayment {
     /////////////////
     error EscrowPayment__NotABuyer();
     error EscrowPayment__NotASeller();
-    error EscrowPayment__NotADeliveryDriver();
+    error EscrowPayment__NotACourier();
     error EscrowPayment__TransferFailed();
     error EscrowPayment__TransferFromFailed();
     error EscrowPayment__BuyerAlreadyDeposited();
     error EscrowPayment__SellerAlreadyDeposited();
-    error EscrowPayment__DeliveryDriverAlreadyDeposited();
+    error EscrowPayment__CourierAlreadyDeposited();
     error EscrowPayment__IncompleteDeposits();
     error EscrowPayment__NoOutstandingAmountWithdrawable();
 
     ////////////////
     // Enums      //
     ////////////////
-    enum DepositorType { BUYER, SELLER, DELIVERY_DRIVER }
+    enum DepositorType { BUYER, SELLER, COURIER }
 
     //////////////////
     // Structs      //
@@ -30,15 +30,17 @@ contract EscrowPayment {
     struct Depositors {
         address buyer;
         address seller;
-        address deliveryDriver;
+        address courier;
     }
 
     //////////////////////////
     // State Variables      //
     //////////////////////////
     IERC20 private immutable i_tokenSelected;
-    uint256 private s_price;
+    uint256 private immutable i_price;
+    uint256 private immutable i_shippingFee;
     uint8 private s_depositorsCount;
+    bool private s_transactionCompleted;
     Depositors private s_depositors;
     mapping (address depositor => uint256 amountWithdrawable) private s_amountWithdrawable;
 
@@ -46,8 +48,9 @@ contract EscrowPayment {
     // Functions      //
     ////////////////////
 
-    constructor(uint256 price, address tokenSelected, DepositorType depositorType) {
-        s_price = price;
+    constructor(uint256 price, address tokenSelected, DepositorType depositorType, uint256 shippingFee) {
+        i_price = price;
+        i_shippingFee = shippingFee;
         i_tokenSelected = IERC20(tokenSelected);
 
         deposit(depositorType);
@@ -71,9 +74,9 @@ contract EscrowPayment {
         _;
     }
 
-    modifier onlyDeliveryDriver() {
-        if (msg.sender != s_depositors.deliveryDriver) {
-            revert EscrowPayment__NotADeliveryDriver();
+    modifier onlyCourier() {
+        if (msg.sender != s_depositors.courier) {
+            revert EscrowPayment__NotACourier();
         }
         _;
     }
@@ -90,10 +93,10 @@ contract EscrowPayment {
             _depositAsSeller();
         }
         else {
-            _depositAsDeliveryDriver();
+            _depositAsCourier();
         }
 
-        bool success = i_tokenSelected.transferFrom(msg.sender, address(this), s_price);
+        bool success = i_tokenSelected.transferFrom(msg.sender, address(this), i_price);
         if (!success) {
             revert EscrowPayment__TransferFromFailed();
         }
@@ -117,15 +120,23 @@ contract EscrowPayment {
         if (s_depositorsCount < 3) {
             revert EscrowPayment__IncompleteDeposits();
         }
-        s_amountWithdrawable[s_depositors.seller] = s_price * 2;
-        s_amountWithdrawable[s_depositors.deliveryDriver] = s_price;
+
+        s_amountWithdrawable[s_depositors.seller] = i_price * 2;
+        s_amountWithdrawable[s_depositors.courier] = i_price;
     }
 
-    function cancel() external onlyBuyer {}
+    function cancel(bool hasIssue) external onlyBuyer {
+        if (!hasIssue) {
+            _settleCourierReturnFee(msg.sender);
+        }
+        else {
+            _fileDispute();
+        }
+    }
 
-    function confirmDispute() external onlyDeliveryDriver {}
+    function confirmDispute() external onlyCourier {}
 
-    function declineDispute() external onlyDeliveryDriver {}
+    function declineDispute() external onlyCourier {}
 
     function receiveReturnedProduct() external onlySeller {}
 
@@ -149,12 +160,18 @@ contract EscrowPayment {
         s_depositorsCount++;
     }
 
-    function _depositAsDeliveryDriver() private {
-        if (s_depositors.deliveryDriver != address(0)) {
-            revert EscrowPayment__DeliveryDriverAlreadyDeposited();
+    function _depositAsCourier() private {
+        if (s_depositors.courier != address(0)) {
+            revert EscrowPayment__CourierAlreadyDeposited();
         }
-        s_depositors.deliveryDriver = msg.sender;
+        s_depositors.courier = msg.sender;
         s_depositorsCount++;
+    }
+
+    function _settleCourierReturnFee(address payer) private {
+        if (i_shippingFee < i_price) {
+            // s_amountWithdrawable[]
+        }
     }
 
     //////////////////////////////////
