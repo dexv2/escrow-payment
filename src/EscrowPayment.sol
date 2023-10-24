@@ -38,6 +38,9 @@ contract EscrowPayment {
     //////////////////////////
     // State Variables      //
     //////////////////////////
+    uint256 private constant INCONVENIENCE_THRESHOLD = 50;
+    uint256 private constant PRECISION = 100;
+
     IERC20 private immutable i_tokenSelected;
     uint256 private immutable i_price;
     uint256 private immutable i_shippingFee;
@@ -45,6 +48,7 @@ contract EscrowPayment {
     bool private s_transactionCompleted;
     bool private s_buyerFiledDispute;
     Depositors private s_depositors;
+
     mapping (address depositor => uint256 amountWithdrawable) private s_amountWithdrawable;
 
     ////////////////////
@@ -143,7 +147,8 @@ contract EscrowPayment {
 
     function cancel(bool hasIssue) external onlyBuyer {
         if (!hasIssue) {
-            _settleCourierReturnFee(msg.sender);
+            _payCourierReturnFee(msg.sender);
+            _payInconvenienceFee(msg.sender);
         }
         else {
             s_buyerFiledDispute = true;
@@ -152,10 +157,12 @@ contract EscrowPayment {
 
     function resolveDispute(bool reallyHasIssue) external onlyCourier hasDispute {
         if (reallyHasIssue) {
-            _settleCourierReturnFee(s_depositors.seller);
+            _payCourierReturnFee(s_depositors.seller);
         }
         else {
-            _settleCourierReturnFee(s_depositors.buyer);
+            address buyer = s_depositors.buyer;
+            _payCourierReturnFee(buyer);
+            _payInconvenienceFee(buyer);
         }
     }
 
@@ -186,15 +193,29 @@ contract EscrowPayment {
         s_depositors.courier = msg.sender;
     }
 
-    function _settleCourierReturnFee(address payer) private {
-        if (i_shippingFee < i_price) {
-            uint256 shippingFee = i_shippingFee;
-            s_amountWithdrawable[msg.sender] -= shippingFee;
+    function _payCourierReturnFee(address payer) private {
+        uint256 shippingFee = i_shippingFee;
+        uint256 payerBalance = s_amountWithdrawable[payer];
+        if (shippingFee < payerBalance) {
+            s_amountWithdrawable[payer] -= shippingFee;
             s_amountWithdrawable[s_depositors.courier] += shippingFee;
         }
         else {
-            s_amountWithdrawable[s_depositors.courier] += s_amountWithdrawable[msg.sender];
-            s_amountWithdrawable[msg.sender] = 0;
+            s_amountWithdrawable[s_depositors.courier] += payerBalance;
+            s_amountWithdrawable[payer] = 0;
+        }
+    }
+
+    function _payInconvenienceFee(address buyer) private {
+        uint256 inconvenienceFee = i_price * INCONVENIENCE_THRESHOLD / PRECISION;
+        uint256 buyerBalance = s_amountWithdrawable[buyer];
+        if (inconvenienceFee < buyerBalance) {
+            s_amountWithdrawable[buyer] -= inconvenienceFee;
+            s_amountWithdrawable[s_depositors.seller] += inconvenienceFee;
+        }
+        else {
+            s_amountWithdrawable[s_depositors.seller] += buyerBalance;
+            s_amountWithdrawable[buyer] = 0;
         }
     }
 
