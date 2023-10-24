@@ -19,6 +19,7 @@ contract EscrowPayment {
     error EscrowPayment__IncompleteDeposits();
     error EscrowPayment__NoOutstandingAmountWithdrawable();
     error EscrowPayment__TransactionStillOngoing();
+    error EscrowPayment__NoDisputeFiled();
 
     ////////////////
     // Enums      //
@@ -42,6 +43,7 @@ contract EscrowPayment {
     uint256 private immutable i_shippingFee;
     uint8 private s_depositorsCount;
     bool private s_transactionCompleted;
+    bool private s_buyerFiledDispute;
     Depositors private s_depositors;
     mapping (address depositor => uint256 amountWithdrawable) private s_amountWithdrawable;
 
@@ -78,6 +80,13 @@ contract EscrowPayment {
     modifier onlyCourier() {
         if (msg.sender != s_depositors.courier) {
             revert EscrowPayment__NotACourier();
+        }
+        _;
+    }
+
+    modifier hasDispute() {
+        if (!s_buyerFiledDispute) {
+            revert EscrowPayment__NoDisputeFiled();
         }
         _;
     }
@@ -129,6 +138,7 @@ contract EscrowPayment {
 
         s_amountWithdrawable[s_depositors.seller] += s_amountWithdrawable[msg.sender];
         s_amountWithdrawable[msg.sender] = 0;
+        s_transactionCompleted = true;
     }
 
     function cancel(bool hasIssue) external onlyBuyer {
@@ -136,13 +146,15 @@ contract EscrowPayment {
             _settleCourierReturnFee(msg.sender);
         }
         else {
-            _fileDispute();
+            s_buyerFiledDispute = true;
         }
     }
 
-    function confirmDispute() external onlyCourier {}
+    function confirmDispute() external onlyCourier hasDispute {
+        _settleCourierReturnFee(s_depositors.seller);
+    }
 
-    function declineDispute() external onlyCourier {}
+    function declineDispute() external onlyCourier hasDispute {}
 
     function receiveReturnedProduct() external onlySeller {}
 
