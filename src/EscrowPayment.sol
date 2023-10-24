@@ -150,12 +150,13 @@ contract EscrowPayment {
         }
     }
 
-    function confirmDispute() external onlyCourier hasDispute {
-        _settleCourierReturnFee(s_depositors.seller);
-    }
-
-    function declineDispute() external onlyCourier hasDispute {
-        _settleCourierReturnFee(s_depositors.buyer);
+    function resolveDispute(bool reallyHasIssue) external onlyCourier hasDispute {
+        if (reallyHasIssue) {
+            _settleCourierReturnFee(s_depositors.seller);
+        }
+        else {
+            _settleCourierReturnFee(s_depositors.buyer);
+        }
     }
 
     function receiveReturnedProduct() external onlySeller {}
