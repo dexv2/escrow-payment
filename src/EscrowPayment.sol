@@ -18,6 +18,7 @@ contract EscrowPayment {
     error EscrowPayment__CourierAlreadyDeposited();
     error EscrowPayment__IncompleteDeposits();
     error EscrowPayment__NoOutstandingAmountWithdrawable();
+    error EscrowPayment__TransactionStillOngoing();
 
     ////////////////
     // Enums      //
@@ -96,10 +97,12 @@ contract EscrowPayment {
             _depositAsCourier();
         }
 
+        s_amountWithdrawable[msg.sender] = i_price;
         bool success = i_tokenSelected.transferFrom(msg.sender, address(this), i_price);
         if (!success) {
             revert EscrowPayment__TransferFromFailed();
         }
+        s_depositorsCount++;
     }
 
     // follows CEI
@@ -107,6 +110,9 @@ contract EscrowPayment {
         uint256 amountWithdrawable = s_amountWithdrawable[msg.sender];
         if (amountWithdrawable <= 0) {
             revert EscrowPayment__NoOutstandingAmountWithdrawable();
+        }
+        if (!s_transactionCompleted) {
+            revert EscrowPayment__TransactionStillOngoing();
         }
 
         s_amountWithdrawable[msg.sender] = 0;
@@ -121,8 +127,8 @@ contract EscrowPayment {
             revert EscrowPayment__IncompleteDeposits();
         }
 
-        s_amountWithdrawable[s_depositors.seller] = i_price * 2;
-        s_amountWithdrawable[s_depositors.courier] = i_price;
+        s_amountWithdrawable[s_depositors.seller] += s_amountWithdrawable[msg.sender];
+        s_amountWithdrawable[msg.sender] = 0;
     }
 
     function cancel(bool hasIssue) external onlyBuyer {
@@ -149,7 +155,6 @@ contract EscrowPayment {
             revert EscrowPayment__BuyerAlreadyDeposited();
         }
         s_depositors.buyer = msg.sender;
-        s_depositorsCount++;
     }
 
     function _depositAsSeller() private {
@@ -157,7 +162,6 @@ contract EscrowPayment {
             revert EscrowPayment__SellerAlreadyDeposited();
         }
         s_depositors.seller = msg.sender;
-        s_depositorsCount++;
     }
 
     function _depositAsCourier() private {
@@ -165,12 +169,17 @@ contract EscrowPayment {
             revert EscrowPayment__CourierAlreadyDeposited();
         }
         s_depositors.courier = msg.sender;
-        s_depositorsCount++;
     }
 
     function _settleCourierReturnFee(address payer) private {
         if (i_shippingFee < i_price) {
-            // s_amountWithdrawable[]
+            uint256 shippingFee = i_shippingFee;
+            s_amountWithdrawable[msg.sender] -= shippingFee;
+            s_amountWithdrawable[s_depositors.courier] += shippingFee;
+        }
+        else {
+            s_amountWithdrawable[s_depositors.courier] += s_amountWithdrawable[msg.sender];
+            s_amountWithdrawable[msg.sender] = 0;
         }
     }
 
