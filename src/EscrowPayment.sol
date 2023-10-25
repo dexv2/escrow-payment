@@ -120,6 +120,8 @@ contract EscrowPayment {
      * But the buyer can also cancel and get their deposit back.
      * 
      * For full details, check the other functions below.
+     * 
+     * @notice As seller, ensure that buyer and courier have already deposited to secure your product.
      */
     function deposit(DepositorType depositorType) public {
         if (depositorType == DepositorType.BUYER) {
