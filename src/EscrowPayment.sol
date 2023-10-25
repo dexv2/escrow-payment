@@ -69,8 +69,8 @@ contract EscrowPayment {
      * @param depositorType buyer, seller, or courier. for this contructor, usually it is the seller who calls this
      * @param shippingFee amount of payment for the courier
      * 
-     * @notice upon creating this contract, the depositor (seller) is already required to deposit,
-     * don't worry as you will be able to withdraw it later
+     * @notice Upon creating this contract, the depositor (seller) is already required to deposit.
+     * Don't worry as you will be able to withdraw it later.
      */
     constructor(uint256 price, address tokenSelected, DepositorType depositorType, uint256 shippingFee) {
         i_price = price;
@@ -109,6 +109,18 @@ contract EscrowPayment {
     // Public Functions      //
     ///////////////////////////
 
+    /**
+     * @param depositorType which one is the depositor. either buyer, seller, or courier
+     * 
+     * @notice All entities (buyer, seller, or courier) involved in this transaction are required to deposit.
+     * This is to ensure that no one is able to defraud anyone involved in this transaction.
+     * When this transaction completes, the seller and courier will be able to get their deposit
+     * The buyer's deposit will be transferred to seller as payment.
+     * 
+     * But the buyer can also cancel and get their deposit back.
+     * 
+     * For full details, check the other functions below.
+     */
     function deposit(DepositorType depositorType) public {
         if (depositorType == DepositorType.BUYER) {
             _depositAsBuyer();
