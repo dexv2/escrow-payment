@@ -90,9 +90,9 @@ contract EscrowPayment {
         _;
     }
 
-    /////////////////////////////
-    // External Functions      //
-    /////////////////////////////
+    ///////////////////////////
+    // Public Functions      //
+    ///////////////////////////
 
     function deposit(DepositorType depositorType) public {
         if (depositorType == DepositorType.BUYER) {
@@ -105,29 +105,25 @@ contract EscrowPayment {
             _depositAsCourier();
         }
 
-        s_amountWithdrawable[msg.sender] = i_price;
-        bool success = i_tokenSelected.transferFrom(msg.sender, address(this), i_price);
+        uint256 price = i_price;
+        s_amountWithdrawable[msg.sender] = price;
+        bool success = i_tokenSelected.transferFrom(msg.sender, address(this), price);
         if (!success) {
             revert EscrowPayment__TransferFromFailed();
         }
         s_depositorsCount++;
     }
 
+    /////////////////////////////
+    // External Functions      //
+    /////////////////////////////
+
     // follows CEI
     function withdraw() external {
-        uint256 amountWithdrawable = s_amountWithdrawable[msg.sender];
-        if (amountWithdrawable <= 0) {
-            revert EscrowPayment__NoOutstandingAmountWithdrawable();
-        }
         if (!s_transactionCompleted) {
             revert EscrowPayment__TransactionStillOngoing();
         }
-
-        s_amountWithdrawable[msg.sender] = 0;
-        bool success = i_tokenSelected.transfer(msg.sender, amountWithdrawable);
-        if (!success) {
-            revert EscrowPayment__TransferFailed();
-        }
+        _withdraw();
     }
 
     function receiveProduct() external onlyBuyer {
@@ -223,6 +219,19 @@ contract EscrowPayment {
         else {
             s_amountWithdrawable[s_depositors.seller] += buyerBalance;
             s_amountWithdrawable[buyer] = 0;
+        }
+    }
+
+    function _withdraw() private {
+        uint256 amountWithdrawable = s_amountWithdrawable[msg.sender];
+        if (amountWithdrawable <= 0) {
+            revert EscrowPayment__NoOutstandingAmountWithdrawable();
+        }
+
+        s_amountWithdrawable[msg.sender] = 0;
+        bool success = i_tokenSelected.transfer(msg.sender, amountWithdrawable);
+        if (!success) {
+            revert EscrowPayment__TransferFailed();
         }
     }
 
