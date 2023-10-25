@@ -36,27 +36,42 @@ contract EscrowPayment {
         address courier;
     }
 
-    //////////////////////////
-    // State Variables      //
-    //////////////////////////
+    ///////////////////////////////////
+    // Constant State Variables      //
+    ///////////////////////////////////
     uint256 private constant INCONVENIENCE_THRESHOLD = 50;
     uint256 private constant PRECISION = 100;
 
+    ////////////////////////////////////
+    // Immutable State Variables      //
+    ////////////////////////////////////
     IERC20 private immutable i_tokenSelected;
     uint256 private immutable i_price;
     uint256 private immutable i_shippingFee;
+
+    //////////////////////////
+    // State Variables      //
+    //////////////////////////
     uint8 private s_depositorsCount;
     bool private s_transactionCompleted;
     bool private s_buyerFiledDispute;
     bool private s_courierReturnsProduct;
     Depositors private s_depositors;
-
     mapping (address depositor => uint256 amountWithdrawable) private s_amountWithdrawable;
 
     ////////////////////
     // Functions      //
     ////////////////////
 
+    /**
+     * @param price the price of the product being sold
+     * @param tokenSelected the currency accepted by the seller (USDC/USDT)
+     * @param depositorType buyer, seller, or courier. for this contructor, usually it is the seller who calls this
+     * @param shippingFee amount of payment for the courier
+     * 
+     * @notice upon creating this contract, the depositor (seller) is already required to deposit,
+     * don't worry as you will be able to withdraw it later
+     */
     constructor(uint256 price, address tokenSelected, DepositorType depositorType, uint256 shippingFee) {
         i_price = price;
         i_shippingFee = shippingFee;
@@ -125,6 +140,8 @@ contract EscrowPayment {
         }
         _withdraw();
     }
+
+    function emergencyWithdraw() external {}
 
     function receiveProduct() external onlyBuyer {
         if (s_depositorsCount < 3) {
