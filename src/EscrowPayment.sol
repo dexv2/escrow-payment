@@ -20,6 +20,7 @@ contract EscrowPayment {
     error EscrowPayment__NoOutstandingAmountWithdrawable();
     error EscrowPayment__TransactionStillOngoing();
     error EscrowPayment__NoDisputeFiled();
+    error EscrowPayment__NoProductReturned();
 
     ////////////////
     // Enums      //
@@ -47,6 +48,7 @@ contract EscrowPayment {
     uint8 private s_depositorsCount;
     bool private s_transactionCompleted;
     bool private s_buyerFiledDispute;
+    bool private s_courierReturnsProduct;
     Depositors private s_depositors;
 
     mapping (address depositor => uint256 amountWithdrawable) private s_amountWithdrawable;
@@ -84,13 +86,6 @@ contract EscrowPayment {
     modifier onlyCourier() {
         if (msg.sender != s_depositors.courier) {
             revert EscrowPayment__NotACourier();
-        }
-        _;
-    }
-
-    modifier hasDispute() {
-        if (!s_buyerFiledDispute) {
-            revert EscrowPayment__NoDisputeFiled();
         }
         _;
     }
@@ -155,7 +150,11 @@ contract EscrowPayment {
         }
     }
 
-    function resolveDispute(bool reallyHasIssue) external onlyCourier hasDispute {
+    function resolveDispute(bool reallyHasIssue) external onlyCourier {
+        if (!s_buyerFiledDispute) {
+            revert EscrowPayment__NoDisputeFiled();
+        }
+
         if (reallyHasIssue) {
             _payCourierReturnFee(s_depositors.seller);
         }
@@ -166,7 +165,13 @@ contract EscrowPayment {
         }
     }
 
-    function receiveReturnedProduct() external onlySeller {}
+    function receiveReturnedProduct() external onlySeller {
+        if (!s_courierReturnsProduct) {
+            revert EscrowPayment__NoProductReturned();
+        }
+
+        s_transactionCompleted = true;
+    }
 
     ////////////////////////////
     // Private Functions      //
@@ -204,6 +209,8 @@ contract EscrowPayment {
             s_amountWithdrawable[s_depositors.courier] += payerBalance;
             s_amountWithdrawable[payer] = 0;
         }
+
+        s_courierReturnsProduct = true;
     }
 
     function _payInconvenienceFee(address buyer) private {
