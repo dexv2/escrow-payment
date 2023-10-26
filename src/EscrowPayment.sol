@@ -259,6 +259,12 @@ contract EscrowPayment {
      * @notice See the cancel() and the resoveDispute() function above to check the process of returning the
      * product and see how you will be payed for the inconvenience fee.
      * 
+     * @notice Check the getAmountWithdrawable(address depositor) function and input your wallet address
+     * to see the total amount you can withdraw after the transaction has ended.
+     * 
+     * Calling this function will end the transaction immediately and will let the depositors to withdraw
+     * their remaining amount withdrawables.
+     * 
      */
     function receiveReturnedProduct() external onlySeller {
         if (!s_courierReturnsProduct) {
