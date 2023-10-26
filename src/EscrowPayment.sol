@@ -179,6 +179,27 @@ contract EscrowPayment {
         s_transactionCompleted = true;
     }
 
+    /**
+     * @param hasIssue set this to true when the product delivered is not the same as advertised.
+     * This function is made for the buyer and seller protection.
+     * 
+     * @notice setting hasIssue param to false means you believe the product is legitimate
+     * and you just changed your mind so you don't want to buy it anymore. Doing so will make you
+     * pay an inconvenient fee for the seller which will be deducted to the amount you've deposited.
+     * 
+     * @notice setting hasIssue param to true doesn't end the transaction yet.
+     * 
+     * Here's what you may do next before or after calling this function:
+     * 1. Report the product to the courier that the product is not the same as advertised.
+     * 2. Show the courier your conversation with the seller to prove your point.
+     * 3. Show the product advertisement to the courier.
+     * 
+     * @notice keep in mind that the courier has the power to confirm or decline your dispute.
+     * 
+     * Check the resolveDispute function below to see the full details of confirming and declining
+     * of your dispute to the seller.
+     * 
+     */
     function cancel(bool hasIssue) external onlyBuyer {
         if (!hasIssue) {
             _payCourierReturnFee(msg.sender);
