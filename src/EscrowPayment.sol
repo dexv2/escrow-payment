@@ -39,7 +39,6 @@ contract EscrowPayment {
     ///////////////////////////////////
     // Constant State Variables      //
     ///////////////////////////////////
-    uint256 private constant INCONVENIENCE_THRESHOLD = 50;
     uint256 private constant PRECISION = 100;
 
     ////////////////////////////////////
@@ -48,6 +47,7 @@ contract EscrowPayment {
     IERC20 private immutable i_tokenSelected;
     uint256 private immutable i_price;
     uint256 private immutable i_shippingFee;
+    uint256 private immutable i_inconvenienceThreshold;
 
     //////////////////////////
     // State Variables      //
@@ -72,10 +72,17 @@ contract EscrowPayment {
      * @notice Upon creating this contract, the depositor (seller) is already required to deposit.
      * Don't worry as you will be able to withdraw it later.
      */
-    constructor(uint256 price, address tokenSelected, DepositorType depositorType, uint256 shippingFee) {
+    constructor(
+        uint256 price,
+        address tokenSelected,
+        DepositorType depositorType,
+        uint256 shippingFee,
+        uint256 inconvenienceThreshold
+    ) {
         i_price = price;
         i_shippingFee = shippingFee;
         i_tokenSelected = IERC20(tokenSelected);
+        i_inconvenienceThreshold = inconvenienceThreshold;
 
         deposit(depositorType);
     }
@@ -210,6 +217,22 @@ contract EscrowPayment {
         }
     }
 
+    /**
+     * @notice this is the function to call by the courier if the buyer filed a dispute
+     * after the buyer called the cancel function and set hasIssue param to true.
+     * 
+     * @param reallyHasIssue set this to true after you checked that the product is 
+     * really not the same as advertised.
+     * 
+     * @notice depending on what you set in reallyHasIssue param, the corresponding
+     * entity will pay your shipping fee to return the product.
+     * 
+     * Here's what will happen:
+     * 1. setting reallyHasIssue to true, the seller will pay your return shipping fee.
+     * 2. setting reallyHasIssue to false, the buyer will pay your return shipping fee. And
+     * in addition, the buyer will also pay the seller the inconvenience fee.
+     * 
+     */
     function resolveDispute(bool reallyHasIssue) external onlyCourier {
         if (!s_buyerFiledDispute) {
             revert EscrowPayment__NoDisputeFiled();
@@ -274,7 +297,7 @@ contract EscrowPayment {
     }
 
     function _payInconvenienceFee(address buyer) private {
-        uint256 inconvenienceFee = i_price * INCONVENIENCE_THRESHOLD / PRECISION;
+        uint256 inconvenienceFee = i_price * i_inconvenienceThreshold / PRECISION;
         uint256 buyerBalance = s_amountWithdrawable[buyer];
         if (inconvenienceFee < buyerBalance) {
             s_amountWithdrawable[buyer] -= inconvenienceFee;
