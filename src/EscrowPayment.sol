@@ -256,14 +256,14 @@ contract EscrowPayment {
      * @notice This function is to be called by the seller after the buyer cancelled the transaction
      * and the courier already resolved the dispute.
      * 
-     * @notice See the cancel() and the resoveDispute() function above to check the process of returning the
+     * Check the cancel() and the resoveDispute() function above to see the process of returning the
      * product and see how you will be payed for the inconvenience fee.
      * 
-     * @notice Check the getAmountWithdrawable(address depositor) function and input your wallet address
+     * Check the getAmountWithdrawable(address depositor) function and input your wallet address
      * to see the total amount you can withdraw after the transaction has ended.
      * 
-     * Calling this function will end the transaction immediately and will let the depositors to withdraw
-     * their remaining amount withdrawables.
+     * Calling this function will end the transaction immediately and will let all the depositors 
+     * including you as a seller to withdraw their remaining amount withdrawables.
      * 
      */
     function receiveReturnedProduct() external onlySeller {
