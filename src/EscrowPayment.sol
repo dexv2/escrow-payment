@@ -110,8 +110,6 @@ contract EscrowPayment {
     ///////////////////////////
 
     /**
-     * @param depositorType which one is the depositor. either buyer, seller, or courier
-     * 
      * @notice All entities (buyer, seller, or courier) involved in this transaction are required to deposit.
      * This is to ensure that no one is able to defraud anyone involved in this transaction.
      * When this transaction completes, the seller and courier will be able to get their deposit
@@ -121,7 +119,10 @@ contract EscrowPayment {
      * 
      * For full details, check the other functions below.
      * 
-     * @notice As seller, ensure that buyer and courier have already deposited to secure your product.
+     * @notice As a seller, ensure that buyer and courier have already deposited to secure your product.
+     * 
+     * @param depositorType which one is the depositor. either buyer, seller, or courier
+     * 
      */
     function deposit(DepositorType depositorType) public {
         if (depositorType == DepositorType.BUYER) {
@@ -157,6 +158,17 @@ contract EscrowPayment {
 
     function emergencyWithdraw() external {}
 
+    /**
+     * @notice The buyer should call this function when the courier already delivered the product.
+     * 
+     * Calling this function ends the transaction which does the action:
+     * 1. Lets the courier withdraw their deposit.
+     * 2. Lets the seller withdraw their deposit and the payment of the buyer.
+     * 
+     * @notice As a courier, ensure that the buyer calls this function after handing the product
+     * in order for you to get your deposited amount.
+     * 
+     */
     function receiveProduct() external onlyBuyer {
         if (s_depositorsCount < 3) {
             revert EscrowPayment__IncompleteDeposits();
