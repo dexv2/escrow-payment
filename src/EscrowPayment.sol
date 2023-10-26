@@ -20,7 +20,7 @@ contract EscrowPayment {
     error EscrowPayment__NoOutstandingAmountWithdrawable();
     error EscrowPayment__TransactionStillOngoing();
     error EscrowPayment__NoDisputeFiled();
-    error EscrowPayment__NoProductReturned();
+    error EscrowPayment__NoReturnProduct();
 
     ////////////////
     // Enums      //
@@ -192,7 +192,9 @@ contract EscrowPayment {
      * 
      * @notice setting hasIssue param to false means you believe the product is legitimate
      * and you just changed your mind so you don't want to buy it anymore. Doing so will make you
-     * pay an inconvenient fee for the seller which will be deducted to the amount you've deposited.
+     * pay an inconvenience fee for the seller which will be deducted to the amount you've deposited.
+     * 
+     * Check the _payInconvenienceFee() function below to see the computation of inconvenience fee.
      * 
      * @notice setting hasIssue param to true doesn't end the transaction yet.
      * 
@@ -232,6 +234,8 @@ contract EscrowPayment {
      * 2. setting reallyHasIssue to false, the buyer will pay your return shipping fee. And
      * in addition, the buyer will also pay the seller the inconvenience fee.
      * 
+     * Check the _payInconvenienceFee() function below to see the computation of inconvenience fee.
+     * 
      */
     function resolveDispute(bool reallyHasIssue) external onlyCourier {
         if (!s_buyerFiledDispute) {
@@ -248,9 +252,17 @@ contract EscrowPayment {
         }
     }
 
+    /**
+     * @notice This function is to be called by the seller after the buyer cancelled the transaction
+     * and the courier already resolved the dispute.
+     * 
+     * @notice See the cancel() and the resoveDispute() function above to check the process of returning the
+     * product and see how you will be payed for the inconvenience fee.
+     * 
+     */
     function receiveReturnedProduct() external onlySeller {
         if (!s_courierReturnsProduct) {
-            revert EscrowPayment__NoProductReturned();
+            revert EscrowPayment__NoReturnProduct();
         }
 
         s_transactionCompleted = true;
