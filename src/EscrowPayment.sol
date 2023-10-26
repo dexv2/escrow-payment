@@ -341,4 +341,8 @@ contract EscrowPayment {
     function getDepositors() external view returns (Depositors memory) {
         return s_depositors;
     }
+
+    function getAmountWithdrawable(address depositor) external view returns (uint256) {
+        return s_amountWithdrawable[depositor];
+    }
 }
