@@ -349,6 +349,22 @@ contract EscrowPayment {
         s_courierReturnsProduct = true;
     }
 
+    /**
+     * @param buyer the wallet address of the buyer stored into the system.
+     * 
+     * @notice In addition to the courier return fee, the buyer has to pay the inconvenience fee
+     * if the buyer cancels and no issue on the product.
+     * 
+     * Sample computation of inconvenience fee:
+     * 
+     * let inconvenienceThreshold = 10 (%)
+     * let price = $100 (USD)
+     * PRECISION = 100 (%)
+     * 
+     * $100 USD * 10% / 100% = $10 USD
+     * inconvenienceFee = $10 USD
+     * 
+     */
     function _payInconvenienceFee(address buyer) private {
         uint256 inconvenienceFee = i_price * i_inconvenienceThreshold / PRECISION;
         uint256 buyerBalance = s_amountWithdrawable[buyer];
@@ -357,6 +373,15 @@ contract EscrowPayment {
             s_amountWithdrawable[s_depositors.seller] += inconvenienceFee;
         }
         else {
+            /**
+             * If after paying the return delivery fee, there is not enough deposit
+             * to deduct from the buyer, just the remaining amount will be deducted
+             * from the buyer.
+             * 
+             * This will happen only when the price is very low, so the deposit will just
+             * be enough for the return shipping fee and a little remaining balance.
+             * 
+             */
             s_amountWithdrawable[s_depositors.seller] += buyerBalance;
             s_amountWithdrawable[buyer] = 0;
         }
