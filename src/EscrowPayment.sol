@@ -411,4 +411,12 @@ contract EscrowPayment {
     function getAmountWithdrawable(address depositor) external view returns (uint256) {
         return s_amountWithdrawable[depositor];
     }
+
+    function getPrecision() external pure returns (uint256) {
+        return PRECISION;
+    }
+
+    function getInconvenienceThreshold() external view returns (uint256) {
+        return i_inconvenienceThreshold;
+    }
 }
