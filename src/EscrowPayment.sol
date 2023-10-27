@@ -4,6 +4,26 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * @title Anti-fraud Escrow Payment System
+ * @author Vermont Phil Paguiligan (Decrow IT Solutions)
+ * 
+ * @custom:terms
+ * Seller - the one who owns the product and wants to sell it securely.
+ * Courier - the one who wants to earn by delivering the product from seller to buyer.
+ * Buyer - the one who is willing to pay for the legitimate product.
+ * 
+ * This system is trustless which can do the transaction securely in either seller's,
+ * buyer's, or courier's POV. No entity can defraud one another when using this system.
+ * 
+ * @notice Using this system requires deposit from all entities (buyer, seller, and courier).
+ * Your deposit is secure inside the system and can be wthdrawn after completing the transaction.
+ * This is required to prevent fraudulent acts from all sides since our goal is to have a
+ * secure transactions that will protect both buyer, seller, and courier also.
+ * 
+ * @notice No other entity can withdraw the deposit except the buyer, seller, and courier.
+ * 
+ */
 contract EscrowPayment {
     /////////////////
     // Errors      //
@@ -68,6 +88,7 @@ contract EscrowPayment {
      * @param tokenSelected the currency accepted by the seller (USDC/USDT)
      * @param depositorType buyer, seller, or courier. for this contructor, usually it is the seller who calls this
      * @param shippingFee amount of payment for the courier
+     * @param inconvenienceThreshold the percentage of inconvenience fee to the product price
      * 
      * @notice Upon creating this contract, the depositor (seller) is already required to deposit.
      * Don't worry as you will be able to withdraw it later.
