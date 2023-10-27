@@ -320,6 +320,20 @@ contract EscrowPayment {
         s_depositors.courier = msg.sender;
     }
 
+    /**
+     * Since this is an individual transaction, cancelling or returning of product requires return shipping fee.
+     * The courier will have the right to decide who will pay for the return shipping fee.
+     * 
+     * Here is how the courier should decide who will pay:
+     * 1. If the buyer cancels even if there is no problem in the product, the buyer should handle the return fee.
+     * 2. If the buyer cancels and they both (buyer and courier) checked that the product has a problem, the
+     *    seller should handle the return fee.
+     * 
+     * @param payer The entity assigned by the courier to pay for the return shipping fee (either buyer or seller)
+     * 
+     * @notice The buyer will automatically shoulder the return fee if they cancel the transaction and input that the product has no issue, 
+     * 
+     */
     function _payCourierReturnFee(address payer) private {
         uint256 shippingFee = i_shippingFee;
         uint256 payerBalance = s_amountWithdrawable[payer];
