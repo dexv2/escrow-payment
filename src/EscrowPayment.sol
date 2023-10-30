@@ -49,12 +49,6 @@ contract EscrowPayment {
     //////////////////
     // Structs      //
     //////////////////
-    struct Depositors {
-        address buyer;
-        address seller;
-        address courier;
-    }
-
     struct DepositorInfo {
         DepositorType depositorType;
         uint256 amountWithdrawable;
@@ -80,7 +74,20 @@ contract EscrowPayment {
     bool private s_transactionCompleted;
     bool private s_buyerFiledDispute;
     bool private s_courierReturnsProduct;
-    Depositors private s_depositors;
+    /**
+     * @dev Made these 2 mappings which may seem a redundant but it's not.
+     * 
+     * s_depositor is used to check if there is an existing depositor in this type.
+     * example: you have deposited as buyer, but you have forgotten it and deposited again.
+     * outcome: depositing again will revert since the buyer type depositor is already occupied.
+     * 
+     * s_depositorInfo is used to check the informations of the depositor which also contains depositorType value
+     * depositorType in this object is used to set the value of depositor in s_depositor mapping to address(0)
+     * in emergencyWithdraw() function without searching individually whether the msg sender is buyer, seller,
+     * or courier.
+     * 
+     * May refactor soon if there is a better solution.
+     */
     mapping (address depositor => DepositorInfo depositorInfo) private s_depositorInfo;
     mapping (DepositorType depositorType => address depositor) private s_depositor;
 
@@ -159,6 +166,10 @@ contract EscrowPayment {
      * 
      */
     function deposit(DepositorType depositorType) public {
+        /**
+         * Checking and filling the depositor mapping to make sure
+         * there wouldn't be a deposit duplication.
+         */
         address depositor = s_depositor[depositorType];
         if (depositor != address(0)) {
             revert EscrowPayment__AlreadyDeposited(depositorType, depositor);
@@ -187,13 +198,36 @@ contract EscrowPayment {
         if (!s_transactionCompleted) {
             revert EscrowPayment__TransactionStillOngoing();
         }
-        _withdraw();
+
+        uint256 amountWithdrawable = _getAmountWithdrawable(msg.sender);
+        s_depositorInfo[msg.sender].amountWithdrawable = 0;
+
+        _withdraw(amountWithdrawable);
     }
 
+    /**
+     * @notice The depositor can call this function if the other entities involved have backed out
+     * or didn't deposit so the transaction will not progress anymore.
+     * 
+     * In this case, the depositor can withdraw their deposit.
+     */
     function emergencyWithdraw() external {
+        /// @dev thinking of adding idle time guard soon to prevent fraudulent immediate withdrawal...
         if (s_depositorsCount > 2) {
             revert EscrowPayment__EmergencyWithdrawNotAllowed();
         }
+
+        uint256 amountWithdrawable = _getAmountWithdrawable(msg.sender);
+
+        /// remove the depositor from the list
+        s_depositorsCount--;
+        s_depositor[s_depositorInfo[msg.sender].depositorType] = address(0);
+
+        /// clear the depositor's information
+        DepositorInfo memory depositorInfo;
+        s_depositorInfo[msg.sender] = depositorInfo;
+
+        _withdraw(amountWithdrawable);
     }
 
     /**
@@ -376,13 +410,11 @@ contract EscrowPayment {
         }
     }
 
-    function _withdraw() private {
-        uint256 amountWithdrawable = _getAmountWithdrawable(msg.sender);
+    function _withdraw(uint256 amountWithdrawable) private {
         if (amountWithdrawable <= 0) {
             revert EscrowPayment__NoOutstandingAmountWithdrawable();
         }
 
-        s_depositorInfo[msg.sender].amountWithdrawable = 0;
         bool success = i_tokenSelected.transfer(msg.sender, amountWithdrawable);
         if (!success) {
             revert EscrowPayment__TransferFailed();
@@ -412,10 +444,6 @@ contract EscrowPayment {
     //////////////////////////////////
     // External View Functions      //
     //////////////////////////////////
-
-    function getDepositors() external view returns (Depositors memory) {
-        return s_depositors;
-    }
 
     function getAmountWithdrawable(address depositor) external view returns (uint256) {
         return _getAmountWithdrawable(depositor);
