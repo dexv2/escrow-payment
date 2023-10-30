@@ -33,9 +33,7 @@ contract EscrowPayment {
     error EscrowPayment__NotACourier();
     error EscrowPayment__TransferFailed();
     error EscrowPayment__TransferFromFailed();
-    error EscrowPayment__BuyerAlreadyDeposited();
-    error EscrowPayment__SellerAlreadyDeposited();
-    error EscrowPayment__CourierAlreadyDeposited();
+    error EscrowPayment__AlreadyDeposited(DepositorType depositorType, address depositor);
     error EscrowPayment__IncompleteDeposits();
     error EscrowPayment__NoOutstandingAmountWithdrawable();
     error EscrowPayment__TransactionStillOngoing();
@@ -57,7 +55,7 @@ contract EscrowPayment {
         address courier;
     }
 
-    struct DepositorsInfo {
+    struct DepositorInfo {
         DepositorType depositorType;
         uint256 amountWithdrawable;
     }
@@ -83,7 +81,7 @@ contract EscrowPayment {
     bool private s_buyerFiledDispute;
     bool private s_courierReturnsProduct;
     Depositors private s_depositors;
-    mapping (address depositor => DepositorsInfo amountWithdrawable) private s_depositorsInfo;
+    mapping (address depositor => DepositorInfo depositorInfo) private s_depositorInfo;
     mapping (DepositorType depositorType => address depositor) private s_depositor;
 
     ////////////////////
@@ -161,18 +159,18 @@ contract EscrowPayment {
      * 
      */
     function deposit(DepositorType depositorType) public {
-        if (depositorType == DepositorType.BUYER) {
-            _depositAsBuyer();
+        address depositor = s_depositor[depositorType];
+        if (depositor != address(0)) {
+            revert EscrowPayment__AlreadyDeposited(depositorType, depositor);
         }
-        else if (depositorType == DepositorType.SELLER) {
-            _depositAsSeller();
-        }
-        else {
-            _depositAsCourier();
-        }
+        s_depositor[depositorType] = msg.sender;
 
         uint256 price = i_price;
-        s_depositorsInfo[msg.sender].amountWithdrawable = price;
+        DepositorInfo memory depositorInfo;
+        depositorInfo.depositorType = depositorType;
+        depositorInfo.amountWithdrawable = price;
+        s_depositorInfo[msg.sender] = depositorInfo;
+
         bool success = i_tokenSelected.transferFrom(msg.sender, address(this), price);
         if (!success) {
             revert EscrowPayment__TransferFromFailed();
@@ -214,8 +212,8 @@ contract EscrowPayment {
             revert EscrowPayment__IncompleteDeposits();
         }
 
-        s_depositorsInfo[_getSeller()].amountWithdrawable += s_depositorsInfo[msg.sender].amountWithdrawable;
-        s_depositorsInfo[msg.sender].amountWithdrawable = 0;
+        s_depositorInfo[_getSeller()].amountWithdrawable += _getAmountWithdrawable(msg.sender);
+        s_depositorInfo[msg.sender].amountWithdrawable = 0;
         s_transactionCompleted = true;
     }
 
@@ -311,27 +309,6 @@ contract EscrowPayment {
     // Private Functions      //
     ////////////////////////////
 
-    function _depositAsBuyer() private {
-        if (_getBuyer() != address(0)) {
-            revert EscrowPayment__BuyerAlreadyDeposited();
-        }
-        s_depositor[DepositorType.BUYER] = msg.sender;
-    }
-
-    function _depositAsSeller() private {
-        if (_getSeller() != address(0)) {
-            revert EscrowPayment__SellerAlreadyDeposited();
-        }
-        s_depositor[DepositorType.SELLER] = msg.sender;
-    }
-
-    function _depositAsCourier() private {
-        if (_getCourier() != address(0)) {
-            revert EscrowPayment__CourierAlreadyDeposited();
-        }
-        s_depositor[DepositorType.COURIER] = msg.sender;
-    }
-
     /**
      * Since this is an individual transaction, cancelling or returning of product requires return shipping fee.
      * The courier will have the right to decide who will pay for the return shipping fee.
@@ -348,14 +325,14 @@ contract EscrowPayment {
      */
     function _payCourierReturnFee(address payer) private {
         uint256 shippingFee = i_shippingFee;
-        uint256 payerBalance = s_depositorsInfo[payer].amountWithdrawable;
+        uint256 payerBalance = _getAmountWithdrawable(payer);
         if (shippingFee < payerBalance) {
-            s_depositorsInfo[payer].amountWithdrawable -= shippingFee;
-            s_depositorsInfo[_getCourier()].amountWithdrawable += shippingFee;
+            s_depositorInfo[payer].amountWithdrawable -= shippingFee;
+            s_depositorInfo[_getCourier()].amountWithdrawable += shippingFee;
         }
         else {
-            s_depositorsInfo[_getCourier()].amountWithdrawable += payerBalance;
-            s_depositorsInfo[payer].amountWithdrawable = 0;
+            s_depositorInfo[_getCourier()].amountWithdrawable += payerBalance;
+            s_depositorInfo[payer].amountWithdrawable = 0;
         }
 
         s_courierReturnsProduct = true;
@@ -379,10 +356,10 @@ contract EscrowPayment {
      */
     function _payInconvenienceFee(address buyer) private {
         uint256 inconvenienceFee = i_price * i_inconvenienceThreshold / PRECISION;
-        uint256 buyerBalance = s_depositorsInfo[buyer].amountWithdrawable;
+        uint256 buyerBalance = _getAmountWithdrawable(buyer);
         if (inconvenienceFee < buyerBalance) {
-            s_depositorsInfo[buyer].amountWithdrawable -= inconvenienceFee;
-            s_depositorsInfo[_getSeller()].amountWithdrawable += inconvenienceFee;
+            s_depositorInfo[buyer].amountWithdrawable -= inconvenienceFee;
+            s_depositorInfo[_getSeller()].amountWithdrawable += inconvenienceFee;
         }
         else {
             /**
@@ -394,18 +371,18 @@ contract EscrowPayment {
              * be enough for the return shipping fee and a little remaining balance.
              * 
              */
-            s_depositorsInfo[_getSeller()].amountWithdrawable += buyerBalance;
-            s_depositorsInfo[buyer].amountWithdrawable = 0;
+            s_depositorInfo[_getSeller()].amountWithdrawable += buyerBalance;
+            s_depositorInfo[buyer].amountWithdrawable = 0;
         }
     }
 
     function _withdraw() private {
-        uint256 amountWithdrawable = s_depositorsInfo[msg.sender].amountWithdrawable;
+        uint256 amountWithdrawable = _getAmountWithdrawable(msg.sender);
         if (amountWithdrawable <= 0) {
             revert EscrowPayment__NoOutstandingAmountWithdrawable();
         }
 
-        s_depositorsInfo[msg.sender].amountWithdrawable = 0;
+        s_depositorInfo[msg.sender].amountWithdrawable = 0;
         bool success = i_tokenSelected.transfer(msg.sender, amountWithdrawable);
         if (!success) {
             revert EscrowPayment__TransferFailed();
@@ -428,6 +405,10 @@ contract EscrowPayment {
         return s_depositor[DepositorType.COURIER];
     }
 
+    function _getAmountWithdrawable(address depositor) private view returns (uint256) {
+        return s_depositorInfo[depositor].amountWithdrawable;
+    }
+
     //////////////////////////////////
     // External View Functions      //
     //////////////////////////////////
@@ -437,7 +418,7 @@ contract EscrowPayment {
     }
 
     function getAmountWithdrawable(address depositor) external view returns (uint256) {
-        return s_depositorsInfo[depositor].amountWithdrawable;
+        return _getAmountWithdrawable(depositor);
     }
 
     function getPrecision() external pure returns (uint256) {
