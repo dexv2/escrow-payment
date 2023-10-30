@@ -121,21 +121,21 @@ contract EscrowPayment {
     ////////////////////
 
     modifier onlyBuyer() {
-        if (msg.sender != s_depositor[DepositorType.BUYER]) {
+        if (msg.sender != _getBuyer()) {
             revert EscrowPayment__NotABuyer();
         }
         _;
     }
 
     modifier onlySeller() {
-        if (msg.sender != s_depositor[DepositorType.SELLER]) {
+        if (msg.sender != _getSeller()) {
             revert EscrowPayment__NotASeller();
         }
         _;
     }
 
     modifier onlyCourier() {
-        if (msg.sender != s_depositor[DepositorType.COURIER]) {
+        if (msg.sender != _getCourier()) {
             revert EscrowPayment__NotACourier();
         }
         _;
@@ -214,7 +214,7 @@ contract EscrowPayment {
             revert EscrowPayment__IncompleteDeposits();
         }
 
-        s_depositorsInfo[s_depositor[DepositorType.SELLER]].amountWithdrawable += s_depositorsInfo[msg.sender].amountWithdrawable;
+        s_depositorsInfo[_getSeller()].amountWithdrawable += s_depositorsInfo[msg.sender].amountWithdrawable;
         s_depositorsInfo[msg.sender].amountWithdrawable = 0;
         s_transactionCompleted = true;
     }
@@ -276,10 +276,10 @@ contract EscrowPayment {
         }
 
         if (reallyHasIssue) {
-            _payCourierReturnFee(s_depositor[DepositorType.SELLER]);
+            _payCourierReturnFee(_getSeller());
         }
         else {
-            address buyer = s_depositor[DepositorType.BUYER];
+            address buyer = _getBuyer();
             _payCourierReturnFee(buyer);
             _payInconvenienceFee(buyer);
         }
@@ -312,21 +312,21 @@ contract EscrowPayment {
     ////////////////////////////
 
     function _depositAsBuyer() private {
-        if (s_depositor[DepositorType.BUYER] != address(0)) {
+        if (_getBuyer() != address(0)) {
             revert EscrowPayment__BuyerAlreadyDeposited();
         }
         s_depositor[DepositorType.BUYER] = msg.sender;
     }
 
     function _depositAsSeller() private {
-        if (s_depositor[DepositorType.SELLER] != address(0)) {
+        if (_getSeller() != address(0)) {
             revert EscrowPayment__SellerAlreadyDeposited();
         }
         s_depositor[DepositorType.SELLER] = msg.sender;
     }
 
     function _depositAsCourier() private {
-        if (s_depositor[DepositorType.COURIER] != address(0)) {
+        if (_getCourier() != address(0)) {
             revert EscrowPayment__CourierAlreadyDeposited();
         }
         s_depositor[DepositorType.COURIER] = msg.sender;
@@ -351,10 +351,10 @@ contract EscrowPayment {
         uint256 payerBalance = s_depositorsInfo[payer].amountWithdrawable;
         if (shippingFee < payerBalance) {
             s_depositorsInfo[payer].amountWithdrawable -= shippingFee;
-            s_depositorsInfo[s_depositor[DepositorType.COURIER]].amountWithdrawable += shippingFee;
+            s_depositorsInfo[_getCourier()].amountWithdrawable += shippingFee;
         }
         else {
-            s_depositorsInfo[s_depositor[DepositorType.COURIER]].amountWithdrawable += payerBalance;
+            s_depositorsInfo[_getCourier()].amountWithdrawable += payerBalance;
             s_depositorsInfo[payer].amountWithdrawable = 0;
         }
 
@@ -382,7 +382,7 @@ contract EscrowPayment {
         uint256 buyerBalance = s_depositorsInfo[buyer].amountWithdrawable;
         if (inconvenienceFee < buyerBalance) {
             s_depositorsInfo[buyer].amountWithdrawable -= inconvenienceFee;
-            s_depositorsInfo[s_depositor[DepositorType.SELLER]].amountWithdrawable += inconvenienceFee;
+            s_depositorsInfo[_getSeller()].amountWithdrawable += inconvenienceFee;
         }
         else {
             /**
@@ -394,7 +394,7 @@ contract EscrowPayment {
              * be enough for the return shipping fee and a little remaining balance.
              * 
              */
-            s_depositorsInfo[s_depositor[DepositorType.SELLER]].amountWithdrawable += buyerBalance;
+            s_depositorsInfo[_getSeller()].amountWithdrawable += buyerBalance;
             s_depositorsInfo[buyer].amountWithdrawable = 0;
         }
     }
@@ -416,15 +416,15 @@ contract EscrowPayment {
     // Private View Functions      //
     /////////////////////////////////
 
-    function _getBuyer() private view returns (address buyer) {
+    function _getBuyer() private view returns (address) {
         return s_depositor[DepositorType.BUYER];
     }
 
-    function _getSeller() private view returns (address seller) {
+    function _getSeller() private view returns (address) {
         return s_depositor[DepositorType.SELLER];
     }
 
-    function _getCourier() private view returns (address courier) {
+    function _getCourier() private view returns (address) {
         return s_depositor[DepositorType.COURIER];
     }
 
