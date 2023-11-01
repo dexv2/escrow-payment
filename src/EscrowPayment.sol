@@ -98,7 +98,6 @@ contract EscrowPayment {
     /**
      * @param price the price of the product being sold
      * @param tokenSelected the currency accepted by the seller (USDC/USDT)
-     * @param depositorType buyer, seller, or courier. for this contructor, usually it is the seller who calls this
      * @param shippingFee amount of payment for the courier
      * @param inconvenienceThreshold the percentage of inconvenience fee to the product price
      * 
@@ -109,7 +108,6 @@ contract EscrowPayment {
     constructor(
         uint256 price,
         address tokenSelected,
-        DepositorType depositorType,
         uint256 shippingFee,
         uint256 inconvenienceThreshold
     ) {
@@ -118,7 +116,7 @@ contract EscrowPayment {
         i_tokenSelected = IERC20(tokenSelected);
         i_inconvenienceThreshold = inconvenienceThreshold;
 
-        deposit(depositorType);
+        _deposit(DepositorType.SELLER, tx.origin);
     }
 
     ////////////////////
@@ -166,27 +164,7 @@ contract EscrowPayment {
      * 
      */
     function deposit(DepositorType depositorType) public {
-        /**
-         * Checking and filling the depositor mapping to make sure
-         * there wouldn't be a deposit duplication.
-         */
-        address depositor = s_depositor[depositorType];
-        if (depositor != address(0)) {
-            revert EscrowPayment__AlreadyDeposited(depositorType, depositor);
-        }
-        s_depositor[depositorType] = msg.sender;
-
-        uint256 price = i_price;
-        DepositorInfo memory depositorInfo;
-        depositorInfo.depositorType = depositorType;
-        depositorInfo.amountWithdrawable = price;
-        s_depositorInfo[msg.sender] = depositorInfo;
-
-        bool success = i_tokenSelected.transferFrom(msg.sender, address(this), price);
-        if (!success) {
-            revert EscrowPayment__TransferFromFailed();
-        }
-        s_depositorsCount++;
+        _deposit(depositorType, msg.sender);
     }
 
     /////////////////////////////
@@ -342,6 +320,33 @@ contract EscrowPayment {
     ////////////////////////////
     // Private Functions      //
     ////////////////////////////
+
+    function _deposit(DepositorType depositorType, address depositor) private {
+        /**
+         * Check if there is an existing depositor.
+         * 
+         * Then fill the depositor mapping if there isn't any,
+         * to make sure there wouldn't be a deposit duplication.
+         * 
+         */
+        address existingDepositor = s_depositor[depositorType];
+        if (existingDepositor != address(0)) {
+            revert EscrowPayment__AlreadyDeposited(depositorType, existingDepositor);
+        }
+        s_depositor[depositorType] = depositor;
+
+        uint256 price = i_price;
+        DepositorInfo memory depositorInfo;
+        depositorInfo.depositorType = depositorType;
+        depositorInfo.amountWithdrawable = price;
+        s_depositorInfo[depositor] = depositorInfo;
+
+        bool success = i_tokenSelected.transferFrom(depositor, address(this), price);
+        if (!success) {
+            revert EscrowPayment__TransferFromFailed();
+        }
+        s_depositorsCount++;
+    }
 
     /**
      * Since this is an individual transaction, cancelling or returning of product requires return shipping fee.
