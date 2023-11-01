@@ -21,8 +21,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * This is required to prevent fraudulent acts from all sides since our goal is to have a
  * secure transactions that will protect both buyer, seller, and courier also.
  * 
- * @notice No other entity can withdraw the deposit except the buyer, seller, and courier.
- * 
  */
 contract EscrowPayment {
     /////////////////
@@ -64,7 +62,7 @@ contract EscrowPayment {
     ////////////////////////////////////
     IERC20 private immutable i_tokenSelected;
     uint256 private immutable i_price;
-    uint256 private immutable i_shippingFee;
+    uint256 private immutable i_returnShippingFee;
     uint256 private immutable i_inconvenienceThreshold;
 
     //////////////////////////
@@ -98,25 +96,24 @@ contract EscrowPayment {
     /**
      * @param price the price of the product being sold
      * @param tokenSelected the currency accepted by the seller (USDC/USDT)
-     * @param shippingFee amount of payment for the courier
+     * @param returnShippingFee amount of payment for the courier when required to return the product
      * @param inconvenienceThreshold the percentage of inconvenience fee to the product price
      * 
-     * @notice Upon creating this contract, the depositor (seller) is already required to deposit.
-     * Don't worry as you will be able to withdraw it later.
+     * @notice shipping fee should be paid upfront to the courier before delivering the product.
+     * And returnShippingFee should be equal to the shipping fee paid upfront, or depending on your agreement
+     * with the courier.
      * 
      */
     constructor(
         uint256 price,
         address tokenSelected,
-        uint256 shippingFee,
+        uint256 returnShippingFee,
         uint256 inconvenienceThreshold
     ) {
         i_price = price;
-        i_shippingFee = shippingFee;
+        i_returnShippingFee = returnShippingFee;
         i_tokenSelected = IERC20(tokenSelected);
         i_inconvenienceThreshold = inconvenienceThreshold;
-
-        _deposit(DepositorType.SELLER, tx.origin);
     }
 
     ////////////////////
@@ -171,7 +168,11 @@ contract EscrowPayment {
     // External Functions      //
     /////////////////////////////
 
-    // follows CEI
+    /**
+     * @dev follows CEI
+     * @notice No other entity can withdraw the deposit except the buyer, seller, and courier.
+     * 
+     */
     function withdraw() external {
         if (!s_transactionCompleted) {
             revert EscrowPayment__TransactionStillOngoing();
@@ -363,11 +364,11 @@ contract EscrowPayment {
      * 
      */
     function _payCourierReturnFee(address payer) private {
-        uint256 shippingFee = i_shippingFee;
+        uint256 returnShippingFee = i_returnShippingFee;
         uint256 payerBalance = _getAmountWithdrawable(payer);
-        if (shippingFee < payerBalance) {
-            s_depositorInfo[payer].amountWithdrawable -= shippingFee;
-            s_depositorInfo[_getCourier()].amountWithdrawable += shippingFee;
+        if (returnShippingFee < payerBalance) {
+            s_depositorInfo[payer].amountWithdrawable -= returnShippingFee;
+            s_depositorInfo[_getCourier()].amountWithdrawable += returnShippingFee;
         }
         else {
             s_depositorInfo[_getCourier()].amountWithdrawable += payerBalance;
