@@ -64,6 +64,7 @@ contract EscrowPayment {
     uint256 private immutable i_price;
     uint256 private immutable i_returnShippingFee;
     uint256 private immutable i_inconvenienceThreshold;
+    address private immutable i_factory;
 
     //////////////////////////
     // State Variables      //
@@ -114,6 +115,7 @@ contract EscrowPayment {
         i_returnShippingFee = returnShippingFee;
         i_tokenSelected = IERC20(tokenSelected);
         i_inconvenienceThreshold = inconvenienceThreshold;
+        i_factory = msg.sender;
     }
 
     ////////////////////
@@ -461,5 +463,9 @@ contract EscrowPayment {
 
     function getInconvenienceThreshold() external view returns (uint256) {
         return i_inconvenienceThreshold;
+    }
+
+    function getFactory() external view returns (address) {
+        return i_factory;
     }
 }
