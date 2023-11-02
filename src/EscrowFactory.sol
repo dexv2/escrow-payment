@@ -61,6 +61,10 @@ contract EscrowFactory is Ownable {
         s_inconvenienceThreshold = newThreshold;
     }
 
+    function addSupportedToken(address token) external onlyOwner {
+        s_supportedTokens.push(token);
+    }
+
     function getSupportedTokenByIndex(uint8 index) external view returns (address) {
         address[] memory supportedTokens = s_supportedTokens;
         if (index >= supportedTokens.length) {
@@ -71,5 +75,9 @@ contract EscrowFactory is Ownable {
 
     function getSupportedTokensLength() external view returns (uint256) {
         return s_supportedTokens.length;
+    }
+
+    function getAllSupportedTokens() external view returns (address[] memory) {
+        return s_supportedTokens;
     }
 }
