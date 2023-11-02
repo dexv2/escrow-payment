@@ -28,6 +28,14 @@ contract EscrowFactory is Ownable {
         s_supportedTokens = supportedTokens;
     }
 
+    /**
+     * @param price the decided price of the seller
+     * @param index the index or position of the token accepted by seller in an array of supported tokens
+     * @param returnShippingFee payment to the courier when required to return the product
+     * 
+     * @notice this function can only be called by EOA and not by another smart contract
+     * 
+     */
     function createEscrow(uint256 price, uint8 index, uint256 returnShippingFee) external returns (address) {
         if (msg.sender != tx.origin) {
             revert EscrowFactory__NotEOA();
