@@ -22,7 +22,15 @@ contract EscrowFactory is Ownable {
     error EscrowFactory__TransferFromFailed();
 
     uint256 private s_inconvenienceThreshold = 50;
-    address[] s_supportedTokens;
+    address[] private s_supportedTokens;
+    address[] private s_escrowList;
+
+    event EscrowPaymentCreated(
+        address indexed escrow,
+        address indexed creator,
+        address indexed selectedToken,
+        uint256 price
+    );
 
     constructor(address[] memory supportedTokens) Ownable(msg.sender) {
         s_supportedTokens = supportedTokens;
@@ -40,9 +48,12 @@ contract EscrowFactory is Ownable {
         if (msg.sender != tx.origin) {
             revert EscrowFactory__NotEOA();
         }
+
         address selectedToken = s_supportedTokens[index];
         EscrowPayment escrow = new EscrowPayment(price, selectedToken, returnShippingFee, s_inconvenienceThreshold);
+        s_escrowList.push(address(escrow));
 
+        emit EscrowPaymentCreated(address(escrow), msg.sender, selectedToken, price);
         return address(escrow);
     }
 
