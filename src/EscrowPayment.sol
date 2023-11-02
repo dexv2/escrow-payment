@@ -283,15 +283,15 @@ contract EscrowPayment {
      * 
      */
     function cancel(bool hasIssue) external onlyBuyer {
-        if (!hasIssue) {
-            uint256 returnDeliveryFee = _payCourierReturnFee(msg.sender);
-            uint256 inconvenienceFee = _payInconvenienceFee(msg.sender);
-
-            emit Cancelled(inconvenienceFee, returnDeliveryFee, false);
-        }
-        else {
+        if (hasIssue) {
             s_buyerFiledDispute = true;
+            return;
         }
+
+        uint256 returnDeliveryFee = _payCourierReturnFee(msg.sender);
+        uint256 inconvenienceFee = _payInconvenienceFee(msg.sender);
+
+        emit Cancelled(inconvenienceFee, returnDeliveryFee, false);
     }
 
     /**
