@@ -90,6 +90,16 @@ contract EscrowPayment {
     mapping (address depositor => DepositorInfo depositorInfo) private s_depositorInfo;
     mapping (DepositorType depositorType => address depositor) private s_depositor;
 
+    /////////////////
+    // Events      //
+    /////////////////
+    event Deposited(
+        address indexed depositor,
+        uint8 depositorType,
+        uint256 amountDeposit,
+        uint8 depositorCount
+    );
+
     ////////////////////
     // Functions      //
     ////////////////////
@@ -349,6 +359,8 @@ contract EscrowPayment {
             revert EscrowPayment__TransferFromFailed();
         }
         s_depositorsCount++;
+
+        emit Deposited(depositor, uint8(depositorType), price, s_depositorsCount);
     }
 
     /**
