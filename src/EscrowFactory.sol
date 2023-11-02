@@ -21,7 +21,7 @@ contract EscrowFactory is Ownable {
     error EscrowFactory__NotEOA();
     error EscrowFactory__TransferFromFailed();
 
-    uint256 private s_inconvenienceThreshold = 50;
+    uint256 private s_inconvenienceThreshold;
     address[] private s_supportedTokens;
     address[] private s_escrowList;
 
@@ -32,8 +32,9 @@ contract EscrowFactory is Ownable {
         uint256 price
     );
 
-    constructor(address[] memory supportedTokens) Ownable(msg.sender) {
+    constructor(address[] memory supportedTokens, uint256 inconvenienceThreshold) Ownable(msg.sender) {
         s_supportedTokens = supportedTokens;
+        s_inconvenienceThreshold = inconvenienceThreshold;
     }
 
     /**
