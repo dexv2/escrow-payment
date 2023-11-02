@@ -197,12 +197,12 @@ contract EscrowPayment {
             revert EscrowPayment__TransactionStillOngoing();
         }
 
-        uint256 amountWithdrawable = _getAmountWithdrawable(msg.sender);
+        (DepositorType depositorType, uint256 amountWithdrawable) = _getDepositorInfo(msg.sender);
         s_depositorInfo[msg.sender].amountWithdrawable = 0;
 
         _withdraw(amountWithdrawable);
 
-        // emit Withdrawn(msg.sender, )
+        emit Withdrawn(msg.sender, uint8(depositorType), amountWithdrawable, false);
     }
 
     /**
@@ -228,6 +228,8 @@ contract EscrowPayment {
         s_depositorInfo[msg.sender] = depositorInfo;
 
         _withdraw(amountWithdrawable);
+
+        emit Withdrawn(msg.sender, uint8(depositorType), amountWithdrawable, true);
     }
 
     /**
