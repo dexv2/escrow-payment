@@ -107,6 +107,12 @@ contract EscrowPayment {
         bool isEmergencyWithdraw
     );
 
+    event Cancelled(
+        uint256 inconvenienceFeePayed,
+        uint256 returnDeliveryFeePayed,
+        bool productHasIssue
+    );
+
     ////////////////////
     // Functions      //
     ////////////////////
@@ -278,8 +284,10 @@ contract EscrowPayment {
      */
     function cancel(bool hasIssue) external onlyBuyer {
         if (!hasIssue) {
-            _payCourierReturnFee(msg.sender);
-            _payInconvenienceFee(msg.sender);
+            uint256 returnDeliveryFee = _payCourierReturnFee(msg.sender);
+            uint256 inconvenienceFee = _payInconvenienceFee(msg.sender);
+
+            emit Cancelled(inconvenienceFee, returnDeliveryFee, false);
         }
         else {
             s_buyerFiledDispute = true;
@@ -309,14 +317,19 @@ contract EscrowPayment {
             revert EscrowPayment__NoDisputeFiled();
         }
 
+        uint256 inconvenienceFee;
+        uint256 returnDeliveryFee;
+
         if (reallyHasIssue) {
-            _payCourierReturnFee(_getSeller());
+            returnDeliveryFee = _payCourierReturnFee(_getSeller());
         }
         else {
             address buyer = _getBuyer();
-            _payCourierReturnFee(buyer);
-            _payInconvenienceFee(buyer);
+            returnDeliveryFee = _payCourierReturnFee(buyer);
+            inconvenienceFee = _payInconvenienceFee(buyer);
         }
+
+        emit Cancelled(inconvenienceFee, returnDeliveryFee, reallyHasIssue);
     }
 
     /**
@@ -388,7 +401,7 @@ contract EscrowPayment {
      * @notice The buyer will automatically shoulder the return fee if they cancel the transaction and input that the product has no issue, 
      * 
      */
-    function _payCourierReturnFee(address payer) private {
+    function _payCourierReturnFee(address payer) private returns (uint256) {
         uint256 returnShippingFee = i_returnShippingFee;
         uint256 payerBalance = _getAmountWithdrawable(payer);
         if (returnShippingFee < payerBalance) {
@@ -401,6 +414,7 @@ contract EscrowPayment {
         }
 
         s_courierReturnsProduct = true;
+        return returnShippingFee;
     }
 
     /**
@@ -419,7 +433,7 @@ contract EscrowPayment {
      * inconvenienceFee = $10 USD
      * 
      */
-    function _payInconvenienceFee(address buyer) private {
+    function _payInconvenienceFee(address buyer) private returns (uint256) {
         uint256 inconvenienceFee = i_price * i_inconvenienceThreshold / PRECISION;
         uint256 buyerBalance = _getAmountWithdrawable(buyer);
         if (inconvenienceFee < buyerBalance) {
@@ -439,6 +453,8 @@ contract EscrowPayment {
             s_depositorInfo[_getSeller()].amountWithdrawable += buyerBalance;
             s_depositorInfo[buyer].amountWithdrawable = 0;
         }
+
+        return inconvenienceFee < buyerBalance ? inconvenienceFee : buyerBalance;
     }
 
     function _withdraw(uint256 amountWithdrawable) private {
