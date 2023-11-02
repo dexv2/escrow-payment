@@ -6,6 +6,17 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {EscrowPayment} from "./EscrowPayment.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * @title Escrow Payment System Factory
+ * @author Vermont Phil Paguiligan (Decrow IT Solutions)
+ * 
+ * @notice This contract is made to produce Escrow Payment System Contracts which is
+ * initiated by the seller who also decides what the product price is, the type of
+ * cryptocurrency they want to accept, and should input also the return shipping fee
+ * to be payed to courier when under some circumstances, is required to return the product
+ * to the seller.
+ * 
+ */
 contract EscrowFactory is Ownable {
     error EscrowFactory__NotEOA();
     error EscrowFactory__TransferFromFailed();
@@ -17,12 +28,12 @@ contract EscrowFactory is Ownable {
         s_supportedTokens = supportedTokens;
     }
 
-    function initiateEscrow(uint256 price, uint8 index, uint256 shippingFee) external returns (address) {
+    function createEscrow(uint256 price, uint8 index, uint256 returnShippingFee) external returns (address) {
         if (msg.sender != tx.origin) {
             revert EscrowFactory__NotEOA();
         }
         address selectedToken = s_supportedTokens[index];
-        EscrowPayment escrow = new EscrowPayment(price, selectedToken, shippingFee, s_inconvenienceThreshold);
+        EscrowPayment escrow = new EscrowPayment(price, selectedToken, returnShippingFee, s_inconvenienceThreshold);
 
         return address(escrow);
     }
