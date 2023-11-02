@@ -113,6 +113,8 @@ contract EscrowPayment {
         bool productHasIssue
     );
 
+    event Completed(bool isReturned, int256 sellerGainOrLoss);
+
     ////////////////////
     // Functions      //
     ////////////////////
@@ -254,9 +256,12 @@ contract EscrowPayment {
             revert EscrowPayment__IncompleteDeposits();
         }
 
-        s_depositorInfo[_getSeller()].amountWithdrawable += _getAmountWithdrawable(msg.sender);
+        uint256 buyerPaymentAmount = _getAmountWithdrawable(msg.sender);
+        s_depositorInfo[_getSeller()].amountWithdrawable += buyerPaymentAmount;
         s_depositorInfo[msg.sender].amountWithdrawable = 0;
         s_transactionCompleted = true;
+
+        emit Completed(false, int256(buyerPaymentAmount));
     }
 
     /**
@@ -351,7 +356,11 @@ contract EscrowPayment {
             revert EscrowPayment__NoReturnProduct();
         }
 
+        uint256 sellerAmountWithdrawable = _getAmountWithdrawable(s_depositor[DepositorType.SELLER]);
+        int256 sellerGainOrLoss = int256(int256(sellerAmountWithdrawable) - int256(i_price));
+
         s_transactionCompleted = true;
+        emit Completed(false, sellerGainOrLoss);
     }
 
     ////////////////////////////
