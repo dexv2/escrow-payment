@@ -64,4 +64,8 @@ contract EscrowFactory is Ownable {
         }
         return supportedTokens[index];
     }
+
+    function getSupportedTokensLength() external view returns (uint256) {
+        return s_supportedTokens.length;
+    }
 }
