@@ -100,6 +100,13 @@ contract EscrowPayment {
         uint8 depositorCount
     );
 
+    event Withdrawn(
+        address indexed depositor,
+        uint8 depositorType,
+        uint256 amountWithdrawn,
+        bool isEmergencyWithdraw
+    );
+
     ////////////////////
     // Functions      //
     ////////////////////
@@ -194,6 +201,8 @@ contract EscrowPayment {
         s_depositorInfo[msg.sender].amountWithdrawable = 0;
 
         _withdraw(amountWithdrawable);
+
+        // emit Withdrawn(msg.sender, )
     }
 
     /**
@@ -208,11 +217,11 @@ contract EscrowPayment {
             revert EscrowPayment__EmergencyWithdrawNotAllowed();
         }
 
-        uint256 amountWithdrawable = _getAmountWithdrawable(msg.sender);
+        (DepositorType depositorType, uint256 amountWithdrawable) = _getDepositorInfo(msg.sender);
 
         /// remove the depositor from the list
         s_depositorsCount--;
-        s_depositor[s_depositorInfo[msg.sender].depositorType] = address(0);
+        s_depositor[depositorType] = address(0);
 
         /// clear the depositor's information
         DepositorInfo memory depositorInfo;
@@ -459,6 +468,11 @@ contract EscrowPayment {
 
     function _getAmountWithdrawable(address depositor) private view returns (uint256) {
         return s_depositorInfo[depositor].amountWithdrawable;
+    }
+
+    function _getDepositorInfo(address depositor) private view returns (DepositorType, uint256) {
+        DepositorInfo memory info = s_depositorInfo[depositor];
+        return (info.depositorType, info.amountWithdrawable);
     }
 
     //////////////////////////////////
