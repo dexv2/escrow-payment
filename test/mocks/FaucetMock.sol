@@ -13,35 +13,38 @@ contract STCFaucet {
     error STCFaucet__FaucetHasZeroBalance();
 
     uint256 private constant REQUEST_AMOUNT = 1000e18;
-    ERC20Mock private immutable i_stc;
+    ERC20Mock private immutable i_stc1;
+    ERC20Mock private immutable i_stc2;
+    ERC20Mock private immutable i_stc3;
 
-    constructor(address stc) {
-        i_stc = ERC20Mock(stc);
+    constructor(address stc1, address stc2, address stc3) {
+        i_stc1 = ERC20Mock(stc1);
+        i_stc2 = ERC20Mock(stc2);
+        i_stc3 = ERC20Mock(stc3);
     }
 
-    function requestSTC() public {
-        if (_faucetBalanceSTC() == 0) {
-            revert STCFaucet__FaucetHasZeroBalance();
-        }
-
-        if (_faucetBalanceSTC() < REQUEST_AMOUNT) {
-            i_stc.transfer(msg.sender, _faucetBalanceSTC());
-        }
-        else {
-            i_stc.transfer(msg.sender, REQUEST_AMOUNT);
-        }
+    function requestSTC1() public {
+        i_stc1.transfer(msg.sender, REQUEST_AMOUNT);
     }
 
-    function _faucetBalanceSTC() private view returns (uint256) {
-        return i_stc.balanceOf(address(this));
+    function requestSTC2() public {
+        i_stc2.transfer(msg.sender, REQUEST_AMOUNT);
     }
 
-    function getFaucetBalanceSTC() public view returns (uint256) {
-        return _faucetBalanceSTC();
+    function requestSTC3() public {
+        i_stc3.transfer(msg.sender, REQUEST_AMOUNT);
     }
 
-    function getSTCAddress() public view returns (address) {
-        return address(i_stc);
+    function getSTC1Address() public view returns (address) {
+        return address(i_stc1);
+    }
+
+    function getSTC2Address() public view returns (address) {
+        return address(i_stc2);
+    }
+
+    function getSTC3Address() public view returns (address) {
+        return address(i_stc3);
     }
 
     function getRequestAmount() public pure returns (uint256) {
