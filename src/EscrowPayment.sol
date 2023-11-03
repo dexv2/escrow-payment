@@ -229,6 +229,8 @@ contract EscrowPayment {
      * @notice The depositor can call this function if the other entities involved have backed out
      * or didn't deposit so the transaction will not progress anymore.
      * 
+     * @notice The waiting time before the depositor can withdraw is 3 hours.
+     * 
      * In this case, the depositor can withdraw their deposit.
      */
     function emergencyWithdraw() external {
