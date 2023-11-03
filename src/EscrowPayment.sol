@@ -39,6 +39,7 @@ contract EscrowPayment {
     error EscrowPayment__NoReturnProduct();
     error EscrowPayment__EmergencyWithdrawNotAllowed();
     error EscrowPayment__NotYetIdle();
+    error EscrowPayment__NotEOA();
 
     ////////////////
     // Enums      //
@@ -195,6 +196,10 @@ contract EscrowPayment {
      * 
      */
     function deposit(DepositorType depositorType) public {
+        if (msg.sender != tx.origin) {
+            revert EscrowPayment__NotEOA();
+        }
+
         _deposit(depositorType, msg.sender);
     }
 
