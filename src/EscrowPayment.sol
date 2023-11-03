@@ -38,6 +38,7 @@ contract EscrowPayment {
     error EscrowPayment__NoDisputeFiled();
     error EscrowPayment__NoReturnProduct();
     error EscrowPayment__EmergencyWithdrawNotAllowed();
+    error EscrowPayment__NotYetIdle();
 
     ////////////////
     // Enums      //
@@ -56,6 +57,10 @@ contract EscrowPayment {
     // Constant State Variables      //
     ///////////////////////////////////
     uint256 private constant PRECISION = 100;
+    // 3 hours minimum waiting time before the depositor can
+    // emergency withdraw when the number of depositors
+    // required is not satisfied.
+    uint256 private constant MIN_WAITING_TIME = 10800;
 
     ////////////////////////////////////
     // Immutable State Variables      //
@@ -65,6 +70,7 @@ contract EscrowPayment {
     uint256 private immutable i_returnShippingFee;
     uint256 private immutable i_inconvenienceThreshold;
     address private immutable i_factory;
+    uint256 private immutable i_escrowCreatedTime;
 
     //////////////////////////
     // State Variables      //
@@ -141,6 +147,7 @@ contract EscrowPayment {
         i_tokenSelected = IERC20(tokenSelected);
         i_inconvenienceThreshold = inconvenienceThreshold;
         i_factory = msg.sender;
+        i_escrowCreatedTime = block.timestamp;
     }
 
     ////////////////////
@@ -223,6 +230,9 @@ contract EscrowPayment {
         /// @dev thinking of adding idle time guard soon to prevent fraudulent immediate withdrawal...
         if (s_depositorsCount > 2) {
             revert EscrowPayment__EmergencyWithdrawNotAllowed();
+        }
+        if (!_isIdle()) {
+            revert EscrowPayment__NotYetIdle();
         }
 
         (DepositorType depositorType, uint256 amountWithdrawable) = _getDepositorInfo(msg.sender);
@@ -480,6 +490,14 @@ contract EscrowPayment {
     /////////////////////////////////
     // Private View Functions      //
     /////////////////////////////////
+
+    function _idleTime() private view returns (uint256) {
+        return block.timestamp - i_escrowCreatedTime;
+    }
+
+    function _isIdle() private view returns (bool) {
+        return _idleTime() > MIN_WAITING_TIME;
+    }
 
     function _getBuyer() private view returns (address) {
         return s_depositor[DepositorType.BUYER];
