@@ -360,7 +360,7 @@ contract EscrowPayment {
         int256 sellerGainOrLoss = int256(int256(sellerAmountWithdrawable) - int256(i_price));
 
         s_transactionCompleted = true;
-        emit Completed(false, sellerGainOrLoss);
+        emit Completed(true, sellerGainOrLoss);
     }
 
     ////////////////////////////
