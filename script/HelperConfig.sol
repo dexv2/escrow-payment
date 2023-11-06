@@ -24,7 +24,11 @@ contract HelperConfig is Script {
         }
     }
 
-    function getOrCreateAnvilNetworkConfig() public returns (NetworkConfig memory anvilNetworkConfig) {
+    function getSepoliaConfig() public returns (NetworkConfig memory sepoliaConfig) {
+        
+    }
+
+    function getOrCreateAnvilNetworkConfig() public returns (NetworkConfig memory anvilConfig) {
         if (activeNetworkConfig.supportedStablecoins.length > 0) {
             return activeNetworkConfig;
         }
@@ -35,12 +39,13 @@ contract HelperConfig is Script {
         ERC20Mock usd3 = new ERC20Mock("USD3", "USD3", msg.sender, 1000e18);
         vm.stopBroadcast();
 
+        address[] memory stablecoins = new address[](3);
+        stablecoins[0] = address(usd1);
+        stablecoins[1] = address(usd2);
+        stablecoins[2] = address(usd3);
+
         return NetworkConfig({
-            supportedStablecoins: [
-                address(usd1), 
-                address(usd2), 
-                address(usd3)
-            ],
+            supportedStablecoins: stablecoins,
             deployerKey: DEFAULT_ANVIL_KEY
         });
     }
