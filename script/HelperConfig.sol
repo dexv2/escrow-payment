@@ -6,38 +6,30 @@ import {Script} from "forge-std/Script.sol";
 import {ERC20Mock} from "../test/mocks/ERC20Mock.sol";
 
 contract HelperConfig is Script {
-    NetworkConfig public activeNetworkConfig;
     uint256 public constant DEFAULT_ANVIL_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
-
-    struct NetworkConfig {
-        address[] supportedStablecoins;
-        uint256 deployerKey;
-    }
+    address[] public supportedStablecoins;
+    uint256 deployerKey;
 
     constructor() {
         if (block.chainid == 11155111) {
-            activeNetworkConfig = getSepoliaConfig();
+            getSepoliaConfig();
         }
         else {
-            activeNetworkConfig = getOrCreateAnvilNetworkConfig();
+            getOrCreateAnvilNetworkConfig();
         }
     }
 
-    function getSepoliaConfig() public view returns (NetworkConfig memory sepoliaConfig) {
-        address[] memory stablecoins = new address[](3);
-        /**
-         * ADD SEPOLIA STABLECOINS
+    function getSepoliaConfig() public {
+        /** 
+         * ADD SEPOLIA STABLECOINS 
          */
-
-        sepoliaConfig = NetworkConfig({
-            supportedStablecoins: stablecoins,
-            deployerKey: vm.envUint("PRIVATE_KEY")
-        });
+        // supportedStablecoins = [address, address, address];
+        deployerKey = vm.envUint("PRIVATE_KEY");
     }
 
-    function getOrCreateAnvilNetworkConfig() public returns (NetworkConfig memory anvilConfig) {
-        if (activeNetworkConfig.supportedStablecoins.length > 0) {
-            return activeNetworkConfig;
+    function getOrCreateAnvilNetworkConfig() public {
+        if (supportedStablecoins.length > 0) {
+            return;
         }
 
         vm.startBroadcast();
@@ -46,14 +38,11 @@ contract HelperConfig is Script {
         ERC20Mock usd3 = new ERC20Mock("USD3", "USD3", msg.sender, 1000e18);
         vm.stopBroadcast();
 
-        address[] memory stablecoins = new address[](3);
-        stablecoins[0] = address(usd1);
-        stablecoins[1] = address(usd2);
-        stablecoins[2] = address(usd3);
-
-        anvilConfig = NetworkConfig({
-            supportedStablecoins: stablecoins,
-            deployerKey: DEFAULT_ANVIL_KEY
-        });
+        supportedStablecoins = [
+            address(usd1),
+            address(usd2),
+            address(usd3)
+        ];
+        deployerKey = DEFAULT_ANVIL_KEY;
     }
 }
