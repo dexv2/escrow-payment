@@ -28,5 +28,20 @@ contract HelperConfig is Script {
         if (activeNetworkConfig.supportedStablecoins.length > 0) {
             return activeNetworkConfig;
         }
+
+        vm.startBroadcast();
+        ERC20Mock usd1 = new ERC20Mock("USD1", "USD1", msg.sender, 1000e18);
+        ERC20Mock usd2 = new ERC20Mock("USD2", "USD2", msg.sender, 1000e18);
+        ERC20Mock usd3 = new ERC20Mock("USD3", "USD3", msg.sender, 1000e18);
+        vm.stopBroadcast();
+
+        return NetworkConfig({
+            supportedStablecoins: [
+                address(usd1), 
+                address(usd2), 
+                address(usd3)
+            ],
+            deployerKey: DEFAULT_ANVIL_KEY
+        });
     }
 }
