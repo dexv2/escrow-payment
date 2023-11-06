@@ -24,8 +24,16 @@ contract HelperConfig is Script {
         }
     }
 
-    function getSepoliaConfig() public returns (NetworkConfig memory sepoliaConfig) {
-        
+    function getSepoliaConfig() public view returns (NetworkConfig memory sepoliaConfig) {
+        address[] memory stablecoins = new address[](3);
+        /**
+         * ADD SEPOLIA STABLECOINS
+         */
+
+        sepoliaConfig = NetworkConfig({
+            supportedStablecoins: stablecoins,
+            deployerKey: vm.envUint("PRIVATE_KEY")
+        });
     }
 
     function getOrCreateAnvilNetworkConfig() public returns (NetworkConfig memory anvilConfig) {
@@ -44,7 +52,7 @@ contract HelperConfig is Script {
         stablecoins[1] = address(usd2);
         stablecoins[2] = address(usd3);
 
-        return NetworkConfig({
+        anvilConfig = NetworkConfig({
             supportedStablecoins: stablecoins,
             deployerKey: DEFAULT_ANVIL_KEY
         });
