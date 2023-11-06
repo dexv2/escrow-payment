@@ -45,4 +45,8 @@ contract HelperConfig is Script {
         ];
         deployerKey = DEFAULT_ANVIL_KEY;
     }
+
+    function getSupportedStablecoins() public view returns (address[] memory) {
+        return supportedStablecoins;
+    }
 }
