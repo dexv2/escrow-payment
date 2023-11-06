@@ -8,7 +8,7 @@ import {ERC20Mock} from "../test/mocks/ERC20Mock.sol";
 contract HelperConfig is Script {
     uint256 public constant DEFAULT_ANVIL_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
     address[] public supportedStablecoins;
-    uint256 deployerKey;
+    uint256 public deployerKey;
 
     constructor() {
         if (block.chainid == 11155111) {
