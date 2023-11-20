@@ -1,27 +1,50 @@
 // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
-pragma solidity ^0.8.9;
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
-contract PHP is ERC20, Ownable {
-    error PHP__NotZeroAddress();
-    error PHP__MustBeMoreThanZero();
+contract PhilippinePeso is ERC20, ERC20Burnable, ERC20Pausable, Ownable {
+    error PhilippinePeso__NotZeroAddress();
+    error PhilippinePeso__MustBeMoreThanZero();
 
     constructor(address initialOwner)
+        ERC20("Philippine Peso", "PHP")
         Ownable(initialOwner)
-        ERC20("Philippine Peso", "PHP") {}
+    {}
 
-    function mint(address to, uint256 amount) public onlyOwner returns (bool) {
+    function mint(address to, uint256 amount)
+        public
+        whenNotPaused 
+        onlyOwner
+        returns (bool) 
+    {
         if (to == address(0)) {
-            revert PHP__NotZeroAddress();
+            revert PhilippinePeso__NotZeroAddress();
         }
         if (amount == 0) {
-            revert PHP__MustBeMoreThanZero();
+            revert PhilippinePeso__MustBeMoreThanZero();
         }
         _mint(to, amount);
         return true;
     }
 
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    function unpause() public onlyOwner {
+        _unpause();
+    }
+
+    // The following functions are overrides required by Solidity.
+
+    function _update(address from, address to, uint256 value)
+        internal
+        override(ERC20, ERC20Pausable)
+    {
+        super._update(from, to, value);
+    }
 }
