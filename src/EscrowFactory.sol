@@ -5,6 +5,7 @@ pragma solidity 0.8.20;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {EscrowPayment} from "./EscrowPayment.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {PhilippinePeso} from "./PhilippinePeso.sol";
 
 /**
  * @title Escrow Payment System Factory
@@ -21,8 +22,9 @@ contract EscrowFactory is Ownable {
     error EscrowFactory__NotEOA();
     error EscrowFactory__TransferFromFailed();
 
+    address private immutable i_philippinePeso;
     uint256 private s_inconvenienceThreshold;
-    address[] private s_supportedTokens;
+    // address[] private s_supportedTokens;
     address[] private s_escrowList;
 
     event EscrowPaymentCreated(
@@ -32,29 +34,30 @@ contract EscrowFactory is Ownable {
         uint256 price
     );
 
-    constructor(address[] memory supportedTokens, uint256 inconvenienceThreshold) Ownable(msg.sender) {
-        s_supportedTokens = supportedTokens;
+    constructor(
+        address philippinePeso,
+        uint256 inconvenienceThreshold
+    ) Ownable(msg.sender) {
+        i_philippinePeso = philippinePeso;
         s_inconvenienceThreshold = inconvenienceThreshold;
     }
 
     /**
      * @param price the decided price of the seller
-     * @param index the index or position of the token accepted by seller in an array of supported tokens
      * @param returnShippingFee payment to the courier when required to return the product
      * 
      * @notice this function can only be called by EOA and not by another smart contract
      * 
      */
-    function createEscrow(uint256 price, uint8 index, uint256 returnShippingFee) external returns (address) {
+    function createEscrow(uint256 price, uint256 returnShippingFee) external returns (address) {
         if (msg.sender != tx.origin) {
             revert EscrowFactory__NotEOA();
         }
 
-        address selectedToken = s_supportedTokens[index];
-        EscrowPayment escrow = new EscrowPayment(price, selectedToken, returnShippingFee, s_inconvenienceThreshold);
+        EscrowPayment escrow = new EscrowPayment(price, i_philippinePeso, returnShippingFee, s_inconvenienceThreshold);
         s_escrowList.push(address(escrow));
 
-        emit EscrowPaymentCreated(address(escrow), msg.sender, selectedToken, price);
+        emit EscrowPaymentCreated(address(escrow), msg.sender, i_philippinePeso, price);
         return address(escrow);
     }
 
@@ -62,23 +65,7 @@ contract EscrowFactory is Ownable {
         s_inconvenienceThreshold = newThreshold;
     }
 
-    function addSupportedToken(address token) external onlyOwner {
-        s_supportedTokens.push(token);
-    }
-
-    function getSupportedTokenByIndex(uint8 index) external view returns (address) {
-        address[] memory supportedTokens = s_supportedTokens;
-        if (index >= supportedTokens.length) {
-            return address(0);
-        }
-        return supportedTokens[index];
-    }
-
-    function getSupportedTokensLength() external view returns (uint256) {
-        return s_supportedTokens.length;
-    }
-
-    function getAllSupportedTokens() external view returns (address[] memory) {
-        return s_supportedTokens;
+    function getPhpAddress() external view returns (address) {
+        return i_philippinePeso;
     }
 }
