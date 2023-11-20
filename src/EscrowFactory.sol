@@ -65,6 +65,10 @@ contract EscrowFactory is Ownable {
         s_inconvenienceThreshold = newThreshold;
     }
 
+    function topUpPeso(address to, uint256 amount) external onlyOwner {
+        PhilippinePeso(i_philippinePeso).mint(to, amount);
+    }
+
     function getPhpAddress() external view returns (address) {
         return i_philippinePeso;
     }
