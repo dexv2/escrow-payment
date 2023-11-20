@@ -17,7 +17,6 @@ contract PhilippinePeso is ERC20, ERC20Burnable, ERC20Pausable, Ownable {
 
     function mint(address to, uint256 amount)
         public
-        whenNotPaused 
         onlyOwner
         returns (bool) 
     {
