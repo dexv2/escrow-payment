@@ -28,4 +28,16 @@ contract EscrowPaymentTest is Test {
         factory.topUpPeso(COURIER, CREDIT);
         vm.stopPrank();
     }
+
+    function _createEscrow(uint256 price, uint256 returnShippingFee) private returns (address) {
+        vm.prank(SELLER, SELLER);
+        return factory.createEscrow(price, returnShippingFee);
+    }
+
+    function testCanCreateEscrow() public {
+        uint256 price = 1000e18;
+        uint256 returnDeliveryFee = 180e18;
+
+        EscrowPayment(_createEscrow(price, returnDeliveryFee));
+    }
 }
