@@ -15,10 +15,17 @@ contract EscrowPaymentTest is Test {
 
     address public SELLER = makeAddr("seller");
     address public BUYER = makeAddr("buyer");
-    address public Courier = makeAddr("courier");
+    address public COURIER = makeAddr("courier");
+    uint256 private constant CREDIT = 10000e18;
 
     function setUp() public {
         DeployFactory deployer = new DeployFactory();
-        
+        (factory, php) = deployer.run();
+
+        vm.startPrank(factory.owner());
+        factory.topUpPeso(SELLER, CREDIT);
+        factory.topUpPeso(BUYER, CREDIT);
+        factory.topUpPeso(COURIER, CREDIT);
+        vm.stopPrank();
     }
 }
