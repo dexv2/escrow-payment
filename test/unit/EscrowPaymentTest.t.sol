@@ -51,9 +51,9 @@ contract EscrowPaymentTest is Test {
     }
 
     function _depositAsCourier() private {
-        vm.startPrank(SELLER, SELLER);
+        vm.startPrank(COURIER, COURIER);
         php.approve(address(escrow), INITIAL_CREDIT);
-        escrow.deposit(EscrowPayment.DepositorType.SELLER);
+        escrow.deposit(EscrowPayment.DepositorType.COURIER);
         vm.stopPrank();
     }
 
@@ -78,5 +78,13 @@ contract EscrowPaymentTest is Test {
         uint256 endingBuyerBal = php.balanceOf(BUYER);
 
         assertEq(endingBuyerBal, startingBuyerBal - PRICE);
+    }
+
+    function testExactPriceDeductedToCourierOnDeposit() public {
+        uint256 startingCourierBal = php.balanceOf(COURIER);
+        _depositAsCourier();
+        uint256 endingCourierBal = php.balanceOf(COURIER);
+
+        assertEq(endingCourierBal, startingCourierBal - PRICE);
     }
 }
