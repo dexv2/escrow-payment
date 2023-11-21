@@ -126,5 +126,6 @@ contract EscrowPaymentTest is Test {
 
         assertEq(amountDeposit, PRICE);
         assertEq(uint256(depositorType), uint256(EscrowPayment.DepositorType.SELLER));
+        assertEq(escrow.getSeller(), SELLER);
     }
 }
