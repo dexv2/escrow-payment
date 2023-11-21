@@ -71,4 +71,12 @@ contract EscrowPaymentTest is Test {
 
         assertEq(endingSellerBal, startingSellerBal - PRICE);
     }
+
+    function testExactPriceDeductedToBuyerOnDeposit() public {
+        uint256 startingBuyerBal = php.balanceOf(BUYER);
+        _depositAsBuyer();
+        uint256 endingBuyerBal = php.balanceOf(BUYER);
+
+        assertEq(endingBuyerBal, startingBuyerBal - PRICE);
+    }
 }
