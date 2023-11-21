@@ -554,4 +554,8 @@ contract EscrowPayment {
     function getDepositorInfo(address depositor) external view returns (DepositorType, uint256) {
         return _getDepositorInfo(depositor);
     }
+
+    function getSeller() external view returns (address) {
+        return _getSeller();
+    }
 }
