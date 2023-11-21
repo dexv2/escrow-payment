@@ -7,15 +7,15 @@ import {EscrowFactory} from "../src/EscrowFactory.sol";
 import {PhilippinePeso} from "../src/PhilippinePeso.sol";
 
 contract DeployFactory is Script {
-    function run() public returns (EscrowFactory) {
+    function run() public returns (EscrowFactory, PhilippinePeso) {
         uint256 inconvenienceThreshold = 50;
 
         vm.startBroadcast();
-        PhilippinePeso philippinePeso = new PhilippinePeso(msg.sender);
-        EscrowFactory factory = new EscrowFactory(address(philippinePeso), inconvenienceThreshold);
-        philippinePeso.transferOwnership(address(factory));
+        PhilippinePeso php = new PhilippinePeso(msg.sender);
+        EscrowFactory factory = new EscrowFactory(address(php), inconvenienceThreshold);
+        php.transferOwnership(address(factory));
         vm.stopBroadcast();
 
-        return factory;
+        return (factory, php);
     }
 }
