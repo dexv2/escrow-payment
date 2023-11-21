@@ -115,4 +115,16 @@ contract EscrowPaymentTest is Test {
         assertEq(count2, 2);
         assertEq(count3, 3);
     }
+
+    function testSetAccurateSellerInfoOnDeposit() public {
+        _depositAsSeller();
+
+        (
+            EscrowPayment.DepositorType depositorType, 
+            uint256 amountDeposit
+        ) = escrow.getDepositorInfo(SELLER);
+
+        assertEq(amountDeposit, PRICE);
+        assertEq(uint256(depositorType), uint256(EscrowPayment.DepositorType.SELLER));
+    }
 }
