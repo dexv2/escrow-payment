@@ -546,4 +546,8 @@ contract EscrowPayment {
     function getFactory() external view returns (address) {
         return i_factory;
     }
+
+    function getDepositorsCount() external view returns (uint8) {
+        return s_depositorsCount;
+    }
 }
