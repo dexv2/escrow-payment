@@ -100,4 +100,19 @@ contract EscrowPaymentTest is Test {
 
         assertEq(escrowBal, PRICE * 3);
     }
+
+    function testAccurateDepositorCount() public {
+        uint8 count0 = escrow.getDepositorsCount();
+        _depositAsSeller();
+        uint8 count1 = escrow.getDepositorsCount();
+        _depositAsBuyer();
+        uint8 count2 = escrow.getDepositorsCount();
+        _depositAsCourier();
+        uint8 count3 = escrow.getDepositorsCount();
+
+        assertEq(count0, 0);
+        assertEq(count1, 1);
+        assertEq(count2, 2);
+        assertEq(count3, 3);
+    }
 }
