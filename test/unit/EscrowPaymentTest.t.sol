@@ -63,4 +63,12 @@ contract EscrowPaymentTest is Test {
             factory.createEscrow(PRICE, RETURN_SHIPPING_FEE)
         );
     }
+
+    function testExactPriceDeductedToSellerOnDeposit() public {
+        uint256 startingSellerBal = php.balanceOf(SELLER);
+        _depositAsSeller();
+        uint256 endingSellerBal = php.balanceOf(SELLER);
+
+        assertEq(endingSellerBal, startingSellerBal - PRICE);
+    }
 }
