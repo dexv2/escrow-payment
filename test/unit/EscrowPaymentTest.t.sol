@@ -16,28 +16,37 @@ contract EscrowPaymentTest is Test {
     address public SELLER = makeAddr("seller");
     address public BUYER = makeAddr("buyer");
     address public COURIER = makeAddr("courier");
-    uint256 private constant CREDIT = 10000e18;
+    uint256 private constant INITIAL_CREDIT = 10000e18;
+    uint256 private constant PRICE = 1000e18;
+    uint256 private constant RETURN_SHIPPING_FEE = 180e18;
 
     function setUp() public {
         DeployFactory deployer = new DeployFactory();
         (factory, php) = deployer.run();
 
+        _topUpPeso();
+        _createEscrow();
+    }
+
+    function _topUpPeso() private {
         vm.startPrank(factory.owner());
-        factory.topUpPeso(SELLER, CREDIT);
-        factory.topUpPeso(BUYER, CREDIT);
-        factory.topUpPeso(COURIER, CREDIT);
+        factory.topUpPeso(SELLER, INITIAL_CREDIT);
+        factory.topUpPeso(BUYER, INITIAL_CREDIT);
+        factory.topUpPeso(COURIER, INITIAL_CREDIT);
         vm.stopPrank();
     }
 
-    function _createEscrow(uint256 price, uint256 returnShippingFee) private returns (address) {
-        vm.prank(SELLER, SELLER);
-        return factory.createEscrow(price, returnShippingFee);
+    function _depositAsSeller() private {
+        vm.startPrank(SELLER, SELLER);
+        php.approve(address(escrow), INITIAL_CREDIT);
+        escrow.deposit(EscrowPayment.DepositorType.SELLER);
+        vm.stopPrank();
     }
 
-    function testCanCreateEscrow() public {
-        uint256 price = 1000e18;
-        uint256 returnDeliveryFee = 180e18;
-
-        EscrowPayment(_createEscrow(price, returnDeliveryFee));
+    function _createEscrow() private {
+        vm.prank(SELLER, SELLER);
+        escrow = EscrowPayment(
+            factory.createEscrow(PRICE, RETURN_SHIPPING_FEE)
+        );
     }
 }
