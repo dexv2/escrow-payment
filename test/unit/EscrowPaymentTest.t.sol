@@ -43,6 +43,13 @@ contract EscrowPaymentTest is Test {
         vm.stopPrank();
     }
 
+    function _depositAsBuyer() private {
+        vm.startPrank(BUYER, BUYER);
+        php.approve(address(escrow), INITIAL_CREDIT);
+        escrow.deposit(EscrowPayment.DepositorType.BUYER);
+        vm.stopPrank();
+    }
+
     function _createEscrow() private {
         vm.prank(SELLER, SELLER);
         escrow = EscrowPayment(
