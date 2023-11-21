@@ -562,4 +562,8 @@ contract EscrowPayment {
     function getBuyer() external view returns (address) {
         return _getBuyer();
     }
+
+    function getCourier() external view returns (address) {
+        return _getCourier();
+    }
 }
