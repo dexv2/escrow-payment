@@ -550,4 +550,8 @@ contract EscrowPayment {
     function getDepositorsCount() external view returns (uint8) {
         return s_depositorsCount;
     }
+
+    function getDepositorInfo(address depositor) external view returns (DepositorType, uint256) {
+        return _getDepositorInfo(depositor);
+    }
 }
