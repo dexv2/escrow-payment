@@ -57,6 +57,12 @@ contract EscrowPaymentTest is Test {
         vm.stopPrank();
     }
 
+    function _depositAll() private {
+        _depositAsSeller();
+        _depositAsBuyer();
+        _depositAsCourier();
+    }
+
     function _createEscrow() private {
         vm.prank(SELLER, SELLER);
         escrow = EscrowPayment(
@@ -86,5 +92,12 @@ contract EscrowPaymentTest is Test {
         uint256 endingCourierBal = php.balanceOf(COURIER);
 
         assertEq(endingCourierBal, startingCourierBal - PRICE);
+    }
+
+    function testEscrowBalanceEqualsTotalDeposits() public {
+        _depositAll();
+        uint256 escrowBal = php.balanceOf(address(escrow));
+
+        assertEq(escrowBal, PRICE * 3);
     }
 }
