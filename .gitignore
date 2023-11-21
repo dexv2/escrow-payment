@@ -17,3 +17,5 @@ lib/
 .github/
 broadcast/
 notes.md
+
+.gas-snapshot
