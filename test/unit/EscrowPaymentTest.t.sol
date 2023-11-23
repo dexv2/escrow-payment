@@ -166,4 +166,19 @@ contract EscrowPaymentTest is Test {
         escrow.deposit(EscrowPayment.DepositorType.SELLER);
         vm.stopPrank();
     }
+
+    function testRevertsIfDepositedTwice() public {
+        _depositAsSeller();
+        vm.startPrank(SELLER, SELLER);
+        php.approve(address(escrow), INITIAL_CREDIT);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__AlreadyDeposited.selector,
+                EscrowPayment.DepositorType.SELLER,
+                SELLER
+            )
+        );
+        escrow.deposit(EscrowPayment.DepositorType.SELLER);
+        vm.stopPrank();
+    }
 }
