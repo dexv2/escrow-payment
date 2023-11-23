@@ -129,6 +129,19 @@ contract EscrowPaymentTest is Test {
         assertEq(escrow.getSeller(), SELLER);
     }
 
+    function testSetAccurateBuyerInfoOnDeposit() public {
+        _depositAsBuyer();
+
+        (
+            EscrowPayment.DepositorType depositorType, 
+            uint256 amountDeposit
+        ) = escrow.getDepositorInfo(BUYER);
+
+        assertEq(amountDeposit, PRICE);
+        assertEq(uint256(depositorType), uint256(EscrowPayment.DepositorType.BUYER));
+        assertEq(escrow.getBuyer(), BUYER);
+    }
+
     function testRevertsIfDepositorIsNotEOA() public {
         vm.startPrank(SELLER);
         php.approve(address(escrow), INITIAL_CREDIT);
