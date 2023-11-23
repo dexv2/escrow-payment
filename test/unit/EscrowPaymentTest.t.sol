@@ -128,4 +128,16 @@ contract EscrowPaymentTest is Test {
         assertEq(uint256(depositorType), uint256(EscrowPayment.DepositorType.SELLER));
         assertEq(escrow.getSeller(), SELLER);
     }
+
+    function testRevertsIfDepositorIsNotEOA() public {
+        vm.startPrank(SELLER);
+        php.approve(address(escrow), INITIAL_CREDIT);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__NotEOA.selector
+            )
+        );
+        escrow.deposit(EscrowPayment.DepositorType.SELLER);
+        vm.stopPrank();
+    }
 }
