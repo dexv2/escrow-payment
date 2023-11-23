@@ -20,6 +20,7 @@ contract EscrowPaymentTest is Test {
     uint256 private constant INITIAL_CREDIT = 10000e18;
     uint256 private constant PRICE = 1000e18;
     uint256 private constant RETURN_SHIPPING_FEE = 180e18;
+    uint256 private constant MIN_WAITING_TIME = 10800;
 
     function setUp() public {
         DeployFactory deployer = new DeployFactory();
@@ -216,5 +217,29 @@ contract EscrowPaymentTest is Test {
         );
         vm.prank(SELLER, SELLER);
         escrow.emergencyWithdraw();
+    }
+
+    function testUpdateDepositorsDetailsAfterEmergencyWithdraw() public {
+        _depositAsSeller();
+        _depositAsBuyer();
+        uint8 depositorsCountBefore = escrow.getDepositorsCount();
+        address sellerAddressBefore = escrow.getSeller();
+        (EscrowPayment.DepositorType typeBefore, uint256 withdrawableBefore) = escrow.getDepositorInfo(SELLER);
+
+        vm.warp(block.timestamp + MIN_WAITING_TIME + 1);
+        vm.prank(SELLER, SELLER);
+        escrow.emergencyWithdraw();
+
+        uint8 depositorsCountAfter = escrow.getDepositorsCount();
+        address sellerAddressAfter = escrow.getSeller();
+        (EscrowPayment.DepositorType typeAfter, uint256 withdrawableAfter) = escrow.getDepositorInfo(SELLER);
+
+        assertEq(depositorsCountAfter, depositorsCountBefore - 1);
+        assertEq(sellerAddressBefore, SELLER);
+        assertEq(sellerAddressAfter, address(0));
+        assertEq(uint8(typeBefore), uint8(EscrowPayment.DepositorType.SELLER));
+        assertEq(uint8(typeAfter), uint8(EscrowPayment.DepositorType.NONE));
+        assertEq(withdrawableBefore, PRICE);
+        assertEq(withdrawableAfter, 0);
     }
 }
