@@ -193,4 +193,16 @@ contract EscrowPaymentTest is Test {
         vm.prank(SELLER, SELLER);
         escrow.withdraw();
     }
+
+    function testCannotEmergencyWithdrawWhenAllDepositorsDeposited() public {
+        _depositAll();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__EmergencyWithdrawNotAllowed.selector
+            )
+        );
+        vm.prank(SELLER, SELLER);
+        escrow.emergencyWithdraw();
+    }
 }
