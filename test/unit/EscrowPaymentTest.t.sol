@@ -199,7 +199,7 @@ contract EscrowPaymentTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                EscrowPayment.EscrowPayment__EmergencyWithdrawNotAllowed.selector
+                EscrowPayment.EscrowPayment__NotAllowedWhenAllHaveDeposited.selector
             )
         );
         vm.prank(SELLER, SELLER);
