@@ -44,7 +44,7 @@ contract EscrowPayment {
     ////////////////
     // Enums      //
     ////////////////
-    enum DepositorType { BUYER, SELLER, COURIER }
+    enum DepositorType { NONE, BUYER, SELLER, COURIER }
 
     //////////////////
     // Structs      //
