@@ -234,7 +234,6 @@ contract EscrowPayment {
      * In this case, the depositor can withdraw their deposit.
      */
     function emergencyWithdraw() external {
-        /// @dev thinking of adding idle time guard soon to prevent fraudulent immediate withdrawal...
         if (s_depositorsCount > 2) {
             revert EscrowPayment__EmergencyWithdrawNotAllowed();
         }
