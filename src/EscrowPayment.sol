@@ -37,7 +37,7 @@ contract EscrowPayment {
     error EscrowPayment__TransactionStillOngoing();
     error EscrowPayment__NoDisputeFiled();
     error EscrowPayment__NoReturnProduct();
-    error EscrowPayment__EmergencyWithdrawNotAllowed();
+    error EscrowPayment__NotAllowedWhenAllHaveDeposited();
     error EscrowPayment__NotYetIdle();
     error EscrowPayment__NotEOA();
 
@@ -235,7 +235,7 @@ contract EscrowPayment {
      */
     function emergencyWithdraw() external {
         if (s_depositorsCount > 2) {
-            revert EscrowPayment__EmergencyWithdrawNotAllowed();
+            revert EscrowPayment__NotAllowedWhenAllHaveDeposited();
         }
         if (!_isIdle()) {
             revert EscrowPayment__NotYetIdle();
