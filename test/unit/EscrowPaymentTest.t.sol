@@ -16,6 +16,7 @@ contract EscrowPaymentTest is Test {
     address public SELLER = makeAddr("seller");
     address public BUYER = makeAddr("buyer");
     address public COURIER = makeAddr("courier");
+    address public UNAUTHORIZED = makeAddr("unauthorized");
     uint256 private constant INITIAL_CREDIT = 10000e18;
     uint256 private constant PRICE = 1000e18;
     uint256 private constant RETURN_SHIPPING_FEE = 180e18;
@@ -180,5 +181,16 @@ contract EscrowPaymentTest is Test {
         );
         escrow.deposit(EscrowPayment.DepositorType.SELLER);
         vm.stopPrank();
+    }
+
+    function testCannotWithdrawWhenTransactionIsOngoing() public {
+        _depositAsSeller();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__TransactionStillOngoing.selector
+            )
+        );
+        vm.prank(SELLER, SELLER);
+        escrow.withdraw();
     }
 }
