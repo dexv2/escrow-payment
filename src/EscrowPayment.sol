@@ -87,10 +87,10 @@ contract EscrowPayment {
      * example: you have deposited as buyer, but you have forgotten it and deposited again.
      * outcome: depositing again will revert since the buyer type depositor is already occupied.
      * 
-     * s_depositorInfo is used to check the informations of the depositor which also contains depositorType value
-     * depositorType in this object is used to set the value of depositor in s_depositor mapping to address(0)
-     * in emergencyWithdraw() function without searching individually whether the msg sender is buyer, seller,
-     * or courier.
+     * s_depositorInfo is used to check the informations of the depositor which also contains depositorType value.
+     * The depositorType in this object is used to be the object key in s_depositor mapping which is used to search and
+     * set the value of depositor in s_depositor mapping to address(0) in emergencyWithdraw() function in order to
+     * clear the depositor details without searching individually whether the msg sender is buyer, seller, or courier.
      * 
      * May refactor soon if there is a better solution.
      */
