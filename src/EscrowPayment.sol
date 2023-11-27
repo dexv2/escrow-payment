@@ -273,9 +273,9 @@ contract EscrowPayment {
         }
 
         uint256 buyerPaymentAmount = _getAmountWithdrawable(msg.sender);
-        s_depositorInfo[_getSeller()].amountWithdrawable += buyerPaymentAmount;
         s_depositorInfo[msg.sender].amountWithdrawable = 0;
         s_transactionCompleted = true;
+        s_depositorInfo[_getSeller()].amountWithdrawable += buyerPaymentAmount;
 
         emit Completed(false, int256(buyerPaymentAmount));
     }
