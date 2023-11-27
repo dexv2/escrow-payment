@@ -264,4 +264,16 @@ contract EscrowPaymentTest is Test {
         assertEq(withdrawableAfter, 0);
     }
 
+    function testRevertsIfIncompleteDepositsOnReceivingProduct() public {
+        _depositAsSeller();
+        _depositAsBuyer();
+
+        vm.prank(BUYER);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__IncompleteDeposits.selector
+            )
+        );
+        escrow.receiveProduct();
+    }
 }
