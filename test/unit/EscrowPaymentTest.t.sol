@@ -288,4 +288,16 @@ contract EscrowPaymentTest is Test {
         );
         escrow.receiveProduct();
     }
+
+    function testPaymentTransferedToSellerUponReceivingProduct() public {
+        _depositAll();
+        uint256 buyerDepositBefore = escrow.getAmountWithdrawable(BUYER);
+        uint256 sellerDepositBefore = escrow.getAmountWithdrawable(SELLER);
+
+        vm.prank(BUYER);
+        escrow.receiveProduct();
+        uint256 selerDepositAfter = escrow.getAmountWithdrawable(SELLER);
+
+        assertEq(selerDepositAfter, sellerDepositBefore + buyerDepositBefore);
+    }
 }
