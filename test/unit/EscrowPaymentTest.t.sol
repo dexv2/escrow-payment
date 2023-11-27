@@ -289,6 +289,18 @@ contract EscrowPaymentTest is Test {
         escrow.receiveProduct();
     }
 
+    function testPaymentDeductedToBuyerUponReceivingProduct() public {
+        _depositAll();
+        uint256 buyerDepositBefore = escrow.getAmountWithdrawable(BUYER);
+
+        vm.prank(BUYER);
+        escrow.receiveProduct();
+        uint256 buyerDepositAfter = escrow.getAmountWithdrawable(BUYER);
+
+        assertEq(buyerDepositBefore, PRICE);
+        assertEq(buyerDepositAfter, 0);
+    }
+
     function testPaymentTransferedToSellerUponReceivingProduct() public {
         _depositAll();
         uint256 buyerDepositBefore = escrow.getAmountWithdrawable(BUYER);
