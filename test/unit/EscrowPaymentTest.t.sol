@@ -312,4 +312,12 @@ contract EscrowPaymentTest is Test {
 
         assertEq(selerDepositAfter, sellerDepositBefore + buyerDepositBefore);
     }
+
+    function testTransactionCompletesUponReceivingProduct() public {
+        _depositAll();
+        vm.prank(BUYER);
+        escrow.receiveProduct();
+
+        assert(escrow.getIsTransactionCompleted());
+    }
 }
