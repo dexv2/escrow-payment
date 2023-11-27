@@ -274,4 +274,15 @@ contract EscrowPaymentTest is Test {
         assertEq(uint8(typeBefore), uint8(EscrowPayment.DepositorType.SELLER));
         assertEq(uint8(typeAfter), uint8(EscrowPayment.DepositorType.NONE));
     }
+
+    function testUpdateAmountWithdrawableAfterEmergencyWithdraw() public {
+        _depositAsSeller();
+        (, uint256 withdrawableBefore) = escrow.getDepositorInfo(SELLER);
+        _emergencyWithdraw();
+        (, uint256 withdrawableAfter) = escrow.getDepositorInfo(SELLER);
+
+        assertEq(withdrawableBefore, PRICE);
+        assertEq(withdrawableAfter, 0);
+    }
+
 }
