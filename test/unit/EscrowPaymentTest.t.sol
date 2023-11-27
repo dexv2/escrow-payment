@@ -276,4 +276,16 @@ contract EscrowPaymentTest is Test {
         );
         escrow.receiveProduct();
     }
+
+    function testRevertsWithOnlyBuyerModifierOnReceiveProduct() public {
+        _depositAll();
+
+        vm.prank(COURIER);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__NotABuyer.selector
+            )
+        );
+        escrow.receiveProduct();
+    }
 }
