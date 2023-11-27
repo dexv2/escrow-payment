@@ -567,6 +567,6 @@ contract EscrowPayment {
     }
 
     function getIsTransactionCompleted() external view returns (bool) {
-        return s_transactionCompleted
+        return s_transactionCompleted;
     }
 }
