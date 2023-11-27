@@ -221,7 +221,6 @@ contract EscrowPaymentTest is Test {
 
     function testUpdateDepositorsDetailsAfterEmergencyWithdraw() public {
         _depositAsSeller();
-        _depositAsBuyer();
         uint8 depositorsCountBefore = escrow.getDepositorsCount();
         address sellerAddressBefore = escrow.getSeller();
         (EscrowPayment.DepositorType typeBefore, uint256 withdrawableBefore) = escrow.getDepositorInfo(SELLER);
@@ -241,5 +240,20 @@ contract EscrowPaymentTest is Test {
         assertEq(uint8(typeAfter), uint8(EscrowPayment.DepositorType.NONE));
         assertEq(withdrawableBefore, PRICE);
         assertEq(withdrawableAfter, 0);
+    }
+
+    function _emergencyWithdraw() private {
+        vm.warp(block.timestamp + MIN_WAITING_TIME + 1);
+        vm.prank(SELLER, SELLER);
+        escrow.emergencyWithdraw();
+    }
+
+    function testUpdateDepositorsCountAfterEmergencyWithdraw() public {
+        _depositAsSeller();
+        uint8 depositorsCountBefore = escrow.getDepositorsCount();
+        _emergencyWithdraw();
+        uint8 depositorsCountAfter = escrow.getDepositorsCount();
+
+        assertEq(depositorsCountAfter, depositorsCountBefore - 1);
     }
 }
