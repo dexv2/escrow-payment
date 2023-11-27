@@ -565,4 +565,8 @@ contract EscrowPayment {
     function getCourier() external view returns (address) {
         return _getCourier();
     }
+
+    function getIsTransactionCompleted() external view returns (bool) {
+        return s_transactionCompleted
+    }
 }
