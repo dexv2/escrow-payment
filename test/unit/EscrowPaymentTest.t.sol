@@ -320,4 +320,17 @@ contract EscrowPaymentTest is Test {
 
         assert(escrow.getIsTransactionCompleted());
     }
+
+    function testRevertsWithOnlyBuyerModifierOnCancel() public {
+        _depositAll();
+
+        vm.prank(COURIER);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__NotABuyer.selector
+            )
+        );
+        escrow.cancel(true);
+    }
+
 }
