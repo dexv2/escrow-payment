@@ -333,4 +333,11 @@ contract EscrowPaymentTest is Test {
         escrow.cancel(true);
     }
 
+    function testUpdateDisputeBoolIfCancelledWithIssue() public {
+        _depositAll();
+        vm.prank(BUYER);
+        escrow.cancel(true);
+
+        assert(escrow.getHasBuyerFiledDispute());
+    }
 }
