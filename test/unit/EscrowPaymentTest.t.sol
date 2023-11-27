@@ -264,4 +264,14 @@ contract EscrowPaymentTest is Test {
         assertEq(sellerAddressBefore, SELLER);
         assertEq(sellerAddressAfter, address(0));
     }
+
+    function testUpdateDepositorTypeAfterEmergencyWithdraw() public {
+        _depositAsSeller();
+        (EscrowPayment.DepositorType typeBefore, ) = escrow.getDepositorInfo(SELLER);
+        _emergencyWithdraw();
+        (EscrowPayment.DepositorType typeAfter, ) = escrow.getDepositorInfo(SELLER);
+
+        assertEq(uint8(typeBefore), uint8(EscrowPayment.DepositorType.SELLER));
+        assertEq(uint8(typeAfter), uint8(EscrowPayment.DepositorType.NONE));
+    }
 }
