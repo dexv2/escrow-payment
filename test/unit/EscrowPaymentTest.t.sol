@@ -333,19 +333,19 @@ contract EscrowPaymentTest is Test {
         escrow.cancel(true);
     }
 
-    function testUpdateDisputeBoolIfCancelledWithIssue() public {
+    function _cancel(bool hasIssue) private {
         _depositAll();
         vm.prank(BUYER);
-        escrow.cancel(true);
+        escrow.cancel(hasIssue);
+    }
 
+    function testUpdateDisputeBoolIfCancelledWithIssue() public {
+        _cancel(true);
         assert(escrow.getHasBuyerFiledDispute());
     }
 
     function testSetCourierReturnsProductToTrueIfCancelledWithoutIssue() public {
-        _depositAll();
-        vm.prank(BUYER);
-        escrow.cancel(false);
-
+        _cancel(false);
         assert(escrow.getCourierReturnsProduct());
     }
 }
