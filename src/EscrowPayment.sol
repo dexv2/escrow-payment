@@ -128,7 +128,7 @@ contract EscrowPayment {
 
     /**
      * @param price the price of the product being sold
-     * @param tokenSelected the currency accepted by the seller (USDC/USDT)
+     * @param tokenSelected the currency accepted by the seller (Default is PHP)
      * @param returnShippingFee amount of payment for the courier when required to return the product
      * @param inconvenienceThreshold the percentage of inconvenience fee to the product price
      * 
@@ -448,15 +448,6 @@ contract EscrowPayment {
      * @notice In addition to the courier return fee, the buyer has to pay the inconvenience fee
      * if the buyer cancels and no issue on the product.
      * 
-     * Sample computation of inconvenience fee:
-     * 
-     * let inconvenienceThreshold = 10 (%)
-     * let price = $100 (USD)
-     * PRECISION = 100 (%)
-     * 
-     * $100 USD * 10% / 100% = $10 USD
-     * inconvenienceFee = $10 USD
-     * 
      */
     function _payInconvenienceFee(address buyer) private returns (uint256) {
         uint256 inconvenienceFee = _calculateInconvenienceFee();
@@ -526,6 +517,23 @@ contract EscrowPayment {
         return (info.depositorType, info.amountWithdrawable);
     }
 
+    /**
+     * Sample computation of inconvenience fee:
+     * 
+     * let price = 100 PHP
+     * let inconvenienceThreshold = 10%
+     * let PRECISION = 100%
+     * 
+     * inconvenienceFee formula:
+     * price * inconvenienceThreshold / PRECISION
+     * 100 PHP * 10% / 100% = 10 PHP
+     * 
+     * therefore:
+     *   ------------------------------------
+     *  | sampled inconvenienceFee = 10 PHP |
+     *  ------------------------------------
+     * 
+     */
     function _calculateInconvenienceFee() private view returns (uint256) {
         return i_price * i_inconvenienceThreshold / PRECISION;
     }
