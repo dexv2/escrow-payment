@@ -37,6 +37,13 @@ contract EscrowPaymentTest is Test {
         _;
     }
 
+    modifier courierReceivesReturnFee() {
+        uint256 courierAmountWithdrawableBefore = escrow.getAmountWithdrawable(COURIER);
+        _;
+        uint256 courierAmountWithdrawableAfter = escrow.getAmountWithdrawable(COURIER);
+        assertEq(courierAmountWithdrawableAfter, courierAmountWithdrawableBefore + RETURN_SHIPPING_FEE);
+    }
+
     function _topUpPeso() private {
         vm.startPrank(factory.owner());
         factory.topUpPeso(SELLER, INITIAL_CREDIT);
@@ -335,12 +342,12 @@ contract EscrowPaymentTest is Test {
         amountAfter = escrow.getAmountWithdrawable(depositor);
     }
 
-    function testSetCourierReturnsProductToTrueIfCancelledWithoutIssue() public allDeposited {
+    function testSetCourierReturnsProductToTrueIfCancelledWithoutIssue() public allDeposited courierReceivesReturnFee {
         _cancel(false);
         assert(escrow.getCourierReturnsProduct());
     }
 
-    function testAmountDeductedToBuyerIfCancelledWithoutIssue() public allDeposited {
+    function testAmountDeductedToBuyerIfCancelledWithoutIssue() public allDeposited courierReceivesReturnFee {
         (uint256 buyerAmountWithdrawableBefore, uint256 buyerAmountWithdrawableAfter) = _cancelReturnsAmount(BUYER);
         uint256 inconvenienceFee = escrow.getInconvenienceFee();
         uint256 buyerAmountWithdrawableDeducted = buyerAmountWithdrawableBefore - RETURN_SHIPPING_FEE - inconvenienceFee;
@@ -348,12 +355,7 @@ contract EscrowPaymentTest is Test {
         assertEq(buyerAmountWithdrawableAfter, buyerAmountWithdrawableDeducted);
     }
 
-    function testCourierReceivesReturnFeeIfCancelledWithoutIssue() public allDeposited {
-        (uint256 courierAmountWithdrawableBefore, uint256 courierAmountWithdrawableAfter) = _cancelReturnsAmount(COURIER);
-        assertEq(courierAmountWithdrawableAfter, courierAmountWithdrawableBefore + RETURN_SHIPPING_FEE);
-    }
-
-    function testSellerReceivesInconvenienceFeeIfCancelledWithoutIssue() public allDeposited {
+    function testSellerReceivesInconvenienceFeeIfCancelledWithoutIssue() public allDeposited courierReceivesReturnFee {
         (uint256 sellerAmountWithdrawableBefore, uint256 sellerAmountWithdrawableAfter) = _cancelReturnsAmount(SELLER);
         uint256 inconvenienceFee = escrow.getInconvenienceFee();
 
@@ -386,6 +388,4 @@ contract EscrowPaymentTest is Test {
         vm.prank(BUYER);
         escrow.resolveDispute(true);
     }
-
-
 }
