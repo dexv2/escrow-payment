@@ -333,19 +333,27 @@ contract EscrowPaymentTest is Test {
         escrow.cancel(true);
     }
 
-    function _cancel(bool hasIssue) private {
+    function testUpdateDisputeBoolIfCancelledWithIssue() public {
         _depositAll();
         vm.prank(BUYER);
-        escrow.cancel(hasIssue);
-    }
-
-    function testUpdateDisputeBoolIfCancelledWithIssue() public {
-        _cancel(true);
+        escrow.cancel(true);
         assert(escrow.getHasBuyerFiledDispute());
     }
 
     function testSetCourierReturnsProductToTrueIfCancelledWithoutIssue() public {
-        _cancel(false);
+        _depositAll();
+        vm.prank(BUYER);
+        escrow.cancel(false);
         assert(escrow.getCourierReturnsProduct());
+    }
+
+    function testAmountDeductedToBuyerIfCancelledWithoutIssue() public {
+        _depositAll();
+        uint256 buyerAmountWithdrawableBefore = escrow.getAmountWithdrawable(BUYER);
+        vm.prank(BUYER);
+        escrow.cancel(false);
+        uint256 buyerAmountWithdrawableAfter = escrow.getAmountWithdrawable(BUYER);
+
+        assertEq(buyerAmountWithdrawableAfter, buyerAmountWithdrawableBefore - RETURN_SHIPPING_FEE);
     }
 }
