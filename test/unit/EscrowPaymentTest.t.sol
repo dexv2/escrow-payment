@@ -30,6 +30,13 @@ contract EscrowPaymentTest is Test {
         _createEscrow();
     }
 
+    modifier allDeposited() {
+        _depositAsSeller();
+        _depositAsBuyer();
+        _depositAsCourier();
+        _;
+    }
+
     function _topUpPeso() private {
         vm.startPrank(factory.owner());
         factory.topUpPeso(SELLER, INITIAL_CREDIT);
@@ -57,12 +64,6 @@ contract EscrowPaymentTest is Test {
         php.approve(address(escrow), INITIAL_CREDIT);
         escrow.deposit(EscrowPayment.DepositorType.COURIER);
         vm.stopPrank();
-    }
-
-    function _depositAll() private {
-        _depositAsSeller();
-        _depositAsBuyer();
-        _depositAsCourier();
     }
 
     function _createEscrow() private {
@@ -96,10 +97,8 @@ contract EscrowPaymentTest is Test {
         assertEq(endingCourierBal, startingCourierBal - PRICE);
     }
 
-    function testEscrowBalanceEqualsTotalDeposits() public {
-        _depositAll();
+    function testEscrowBalanceEqualsTotalDeposits() public allDeposited {
         uint256 escrowBal = php.balanceOf(address(escrow));
-
         assertEq(escrowBal, PRICE * 3);
     }
 
@@ -195,9 +194,7 @@ contract EscrowPaymentTest is Test {
         escrow.withdraw();
     }
 
-    function testCannotEmergencyWithdrawWhenAllDepositorsDeposited() public {
-        _depositAll();
-
+    function testCannotEmergencyWithdrawWhenAllDepositorsDeposited() public allDeposited {
         vm.expectRevert(
             abi.encodeWithSelector(
                 EscrowPayment.EscrowPayment__NotAllowedWhenAllHaveDeposited.selector
@@ -277,9 +274,7 @@ contract EscrowPaymentTest is Test {
         escrow.receiveProduct();
     }
 
-    function testRevertsWithOnlyBuyerModifierOnReceiveProduct() public {
-        _depositAll();
-
+    function testRevertsWithOnlyBuyerModifierOnReceiveProduct() public allDeposited {
         vm.prank(COURIER);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -289,8 +284,7 @@ contract EscrowPaymentTest is Test {
         escrow.receiveProduct();
     }
 
-    function testPaymentDeductedToBuyerUponReceivingProduct() public {
-        _depositAll();
+    function testPaymentDeductedToBuyerUponReceivingProduct() public allDeposited {
         uint256 buyerDepositBefore = escrow.getAmountWithdrawable(BUYER);
 
         vm.prank(BUYER);
@@ -301,8 +295,7 @@ contract EscrowPaymentTest is Test {
         assertEq(buyerDepositAfter, 0);
     }
 
-    function testPaymentTransferedToSellerUponReceivingProduct() public {
-        _depositAll();
+    function testPaymentTransferedToSellerUponReceivingProduct() public allDeposited {
         uint256 buyerDepositBefore = escrow.getAmountWithdrawable(BUYER);
         uint256 sellerDepositBefore = escrow.getAmountWithdrawable(SELLER);
 
@@ -313,17 +306,14 @@ contract EscrowPaymentTest is Test {
         assertEq(selerDepositAfter, sellerDepositBefore + buyerDepositBefore);
     }
 
-    function testTransactionCompletesUponReceivingProduct() public {
-        _depositAll();
+    function testTransactionCompletesUponReceivingProduct() public allDeposited {
         vm.prank(BUYER);
         escrow.receiveProduct();
 
         assert(escrow.getIsTransactionCompleted());
     }
 
-    function testRevertsWithOnlyBuyerModifierOnCancel() public {
-        _depositAll();
-
+    function testRevertsWithOnlyBuyerModifierOnCancel() public allDeposited {
         vm.prank(COURIER);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -334,25 +324,23 @@ contract EscrowPaymentTest is Test {
     }
 
     function _cancel(bool hasIssue) private {
-        _depositAll();
         vm.prank(BUYER);
         escrow.cancel(hasIssue);
     }
 
     function _cancelReturnsAmount(address depositor) private returns (uint256 amountBefore, uint256 amountAfter) {
-        _depositAll();
         amountBefore = escrow.getAmountWithdrawable(depositor);
         vm.prank(BUYER);
         escrow.cancel(false);
         amountAfter = escrow.getAmountWithdrawable(depositor);
     }
 
-    function testSetCourierReturnsProductToTrueIfCancelledWithoutIssue() public {
+    function testSetCourierReturnsProductToTrueIfCancelledWithoutIssue() public allDeposited {
         _cancel(false);
         assert(escrow.getCourierReturnsProduct());
     }
 
-    function testAmountDeductedToBuyerIfCancelledWithoutIssue() public {
+    function testAmountDeductedToBuyerIfCancelledWithoutIssue() public allDeposited {
         (uint256 buyerAmountWithdrawableBefore, uint256 buyerAmountWithdrawableAfter) = _cancelReturnsAmount(BUYER);
         uint256 inconvenienceFee = escrow.getInconvenienceFee();
         uint256 buyerAmountWithdrawableDeducted = buyerAmountWithdrawableBefore - RETURN_SHIPPING_FEE - inconvenienceFee;
@@ -360,24 +348,24 @@ contract EscrowPaymentTest is Test {
         assertEq(buyerAmountWithdrawableAfter, buyerAmountWithdrawableDeducted);
     }
 
-    function testCourierReceivesReturnFeeIfCancelledWithoutIssue() public {
+    function testCourierReceivesReturnFeeIfCancelledWithoutIssue() public allDeposited {
         (uint256 courierAmountWithdrawableBefore, uint256 courierAmountWithdrawableAfter) = _cancelReturnsAmount(COURIER);
         assertEq(courierAmountWithdrawableAfter, courierAmountWithdrawableBefore + RETURN_SHIPPING_FEE);
     }
 
-    function testSellerReceivesInconvenienceFeeIfCancelledWithoutIssue() public {
+    function testSellerReceivesInconvenienceFeeIfCancelledWithoutIssue() public allDeposited {
         (uint256 sellerAmountWithdrawableBefore, uint256 sellerAmountWithdrawableAfter) = _cancelReturnsAmount(SELLER);
         uint256 inconvenienceFee = escrow.getInconvenienceFee();
 
         assertEq(sellerAmountWithdrawableAfter, sellerAmountWithdrawableBefore + inconvenienceFee);
     }
 
-    function testUpdateDisputeBoolIfCancelledWithIssue() public {
+    function testUpdateDisputeBoolIfCancelledWithIssue() public allDeposited {
         _cancel(true);
         assert(escrow.getHasBuyerFiledDispute());
     }
 
-    function testRevertsIfCourierTriesToResolveWithoutDispute() public {
+    function testRevertsIfCourierTriesToResolveWithoutDispute() public allDeposited {
         _cancel(false);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -388,7 +376,7 @@ contract EscrowPaymentTest is Test {
         escrow.resolveDispute(true);
     }
 
-    function testRevertsWithOnlyCourierModifierOnResolveDispute() public {
+    function testRevertsWithOnlyCourierModifierOnResolveDispute() public allDeposited {
         _cancel(true);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -398,4 +386,6 @@ contract EscrowPaymentTest is Test {
         vm.prank(BUYER);
         escrow.resolveDispute(true);
     }
+
+
 }
