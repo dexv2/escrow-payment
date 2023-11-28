@@ -573,4 +573,8 @@ contract EscrowPayment {
     function getHasBuyerFiledDispute() external view returns (bool) {
         return s_buyerFiledDispute;
     }
+
+    function getCourierReturnsProduct() external view returns (bool) {
+        return s_courierReturnsProduct;
+    }
 }
