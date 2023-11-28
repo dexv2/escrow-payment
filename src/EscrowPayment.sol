@@ -581,4 +581,8 @@ contract EscrowPayment {
     function getCourierReturnsProduct() external view returns (bool) {
         return s_courierReturnsProduct;
     }
+
+    function getInconvenienceFee() external view returns (uint256) {
+        return _calculateInconvenienceFee();
+    }
 }
