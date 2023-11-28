@@ -333,26 +333,27 @@ contract EscrowPaymentTest is Test {
         escrow.cancel(true);
     }
 
-    function testUpdateDisputeBoolIfCancelledWithIssue() public {
+    function _cancel(bool hasIssue) private {
         _depositAll();
         vm.prank(BUYER);
-        escrow.cancel(true);
-        assert(escrow.getHasBuyerFiledDispute());
+        escrow.cancel(hasIssue);
+    }
+
+    function _cancelReturnsAmount(address depositor) private returns (uint256 amountBefore, uint256 amountAfter) {
+        _depositAll();
+        amountBefore = escrow.getAmountWithdrawable(depositor);
+        vm.prank(BUYER);
+        escrow.cancel(false);
+        amountAfter = escrow.getAmountWithdrawable(depositor);
     }
 
     function testSetCourierReturnsProductToTrueIfCancelledWithoutIssue() public {
-        _depositAll();
-        vm.prank(BUYER);
-        escrow.cancel(false);
+        _cancel(false);
         assert(escrow.getCourierReturnsProduct());
     }
 
     function testAmountDeductedToBuyerIfCancelledWithoutIssue() public {
-        _depositAll();
-        uint256 buyerAmountWithdrawableBefore = escrow.getAmountWithdrawable(BUYER);
-        vm.prank(BUYER);
-        escrow.cancel(false);
-        uint256 buyerAmountWithdrawableAfter = escrow.getAmountWithdrawable(BUYER);
+        (uint256 buyerAmountWithdrawableBefore, uint256 buyerAmountWithdrawableAfter) = _cancelReturnsAmount(BUYER);
         uint256 inconvenienceFee = escrow.getInconvenienceFee();
         uint256 buyerAmountWithdrawableDeducted = buyerAmountWithdrawableBefore - RETURN_SHIPPING_FEE - inconvenienceFee;
 
@@ -360,23 +361,19 @@ contract EscrowPaymentTest is Test {
     }
 
     function testCourierReceivesReturnFeeIfCancelledWithoutIssue() public {
-        _depositAll();
-        uint256 courierAmountWithdrawableBefore = escrow.getAmountWithdrawable(COURIER);
-        vm.prank(BUYER);
-        escrow.cancel(false);
-        uint256 courierAmountWithdrawableAfter = escrow.getAmountWithdrawable(COURIER);
-
+        (uint256 courierAmountWithdrawableBefore, uint256 courierAmountWithdrawableAfter) = _cancelReturnsAmount(COURIER);
         assertEq(courierAmountWithdrawableAfter, courierAmountWithdrawableBefore + RETURN_SHIPPING_FEE);
     }
 
     function testSellerReceivesInconvenienceFeeIfCancelledWithoutIssue() public {
-        _depositAll();
-        uint256 sellerAmountWithdrawableBefore = escrow.getAmountWithdrawable(SELLER);
-        vm.prank(BUYER);
-        escrow.cancel(false);
-        uint256 sellerAmountWithdrawableAfter = escrow.getAmountWithdrawable(SELLER);
+        (uint256 sellerAmountWithdrawableBefore, uint256 sellerAmountWithdrawableAfter) = _cancelReturnsAmount(SELLER);
         uint256 inconvenienceFee = escrow.getInconvenienceFee();
 
         assertEq(sellerAmountWithdrawableAfter, sellerAmountWithdrawableBefore + inconvenienceFee);
+    }
+
+    function testUpdateDisputeBoolIfCancelledWithIssue() public {
+        _cancel(true);
+        assert(escrow.getHasBuyerFiledDispute());
     }
 }
