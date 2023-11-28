@@ -459,7 +459,7 @@ contract EscrowPayment {
      * 
      */
     function _payInconvenienceFee(address buyer) private returns (uint256) {
-        uint256 inconvenienceFee = i_price * i_inconvenienceThreshold / PRECISION;
+        uint256 inconvenienceFee = _calculateInconvenienceFee();
         uint256 buyerBalance = _getAmountWithdrawable(buyer);
         if (inconvenienceFee < buyerBalance) {
             s_depositorInfo[buyer].amountWithdrawable -= inconvenienceFee;
@@ -524,6 +524,10 @@ contract EscrowPayment {
     function _getDepositorInfo(address depositor) private view returns (DepositorType, uint256) {
         DepositorInfo memory info = s_depositorInfo[depositor];
         return (info.depositorType, info.amountWithdrawable);
+    }
+
+    function _calculateInconvenienceFee() private view returns (uint256) {
+        return i_price * i_inconvenienceThreshold / PRECISION;
     }
 
     //////////////////////////////////
