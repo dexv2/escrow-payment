@@ -358,4 +358,14 @@ contract EscrowPaymentTest is Test {
 
         assertEq(buyerAmountWithdrawableAfter, buyerAmountWithdrawableDeducted);
     }
+
+    function testCourierReceivesReturnFeeIfCancelledWithoutIssue() public {
+        _depositAll();
+        uint256 courierAmountWithdrawableBefore = escrow.getAmountWithdrawable(COURIER);
+        vm.prank(BUYER);
+        escrow.cancel(false);
+        uint256 courierAmountWithdrawableAfter = escrow.getAmountWithdrawable(COURIER);
+
+        assertEq(courierAmountWithdrawableAfter, courierAmountWithdrawableBefore + RETURN_SHIPPING_FEE);
+    }
 }
