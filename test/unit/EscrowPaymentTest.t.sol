@@ -376,4 +376,15 @@ contract EscrowPaymentTest is Test {
         _cancel(true);
         assert(escrow.getHasBuyerFiledDispute());
     }
+
+    function testRevertsIfCourierTriesToResolveWithoutDispute() public {
+        _cancel(false);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__NoDisputeFiled.selector
+            )
+        );
+        vm.prank(COURIER);
+        escrow.resolveDispute(true);
+    }
 }
