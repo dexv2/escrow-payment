@@ -340,4 +340,12 @@ contract EscrowPaymentTest is Test {
 
         assert(escrow.getHasBuyerFiledDispute());
     }
+
+    function testSetCourierReturnsProductToTrueIfCancelledWithoutIssue() public {
+        _depositAll();
+        vm.prank(BUYER);
+        escrow.cancel(false);
+
+        assert(escrow.getCourierReturnsProduct());
+    }
 }
