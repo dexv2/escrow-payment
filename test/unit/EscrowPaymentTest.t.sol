@@ -353,7 +353,9 @@ contract EscrowPaymentTest is Test {
         vm.prank(BUYER);
         escrow.cancel(false);
         uint256 buyerAmountWithdrawableAfter = escrow.getAmountWithdrawable(BUYER);
+        uint256 inconvenienceFee = escrow.getInconvenienceFee();
+        uint256 buyerAmountWithdrawableDeducted = buyerAmountWithdrawableBefore - RETURN_SHIPPING_FEE - inconvenienceFee;
 
-        assertEq(buyerAmountWithdrawableAfter, buyerAmountWithdrawableBefore - RETURN_SHIPPING_FEE);
+        assertEq(buyerAmountWithdrawableAfter, buyerAmountWithdrawableDeducted);
     }
 }
