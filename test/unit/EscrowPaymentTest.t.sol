@@ -368,4 +368,15 @@ contract EscrowPaymentTest is Test {
 
         assertEq(courierAmountWithdrawableAfter, courierAmountWithdrawableBefore + RETURN_SHIPPING_FEE);
     }
+
+    function testSellerReceivesInconvenienceFeeIfCancelledWithoutIssue() public {
+        _depositAll();
+        uint256 sellerAmountWithdrawableBefore = escrow.getAmountWithdrawable(SELLER);
+        vm.prank(BUYER);
+        escrow.cancel(false);
+        uint256 sellerAmountWithdrawableAfter = escrow.getAmountWithdrawable(SELLER);
+        uint256 inconvenienceFee = escrow.getInconvenienceFee();
+
+        assertEq(sellerAmountWithdrawableAfter, sellerAmountWithdrawableBefore + inconvenienceFee);
+    }
 }
