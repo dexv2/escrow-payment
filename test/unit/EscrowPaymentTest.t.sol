@@ -468,4 +468,16 @@ contract EscrowPaymentTest is Test {
         escrow.receiveReturnedProduct();
         assert(escrow.getIsTransactionCompleted());
     }
+
+    function testCannotWithdrawIfNoAmountWithdrawable() public allDeposited {
+        vm.startPrank(BUYER);
+        escrow.receiveProduct();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__NoOutstandingAmountWithdrawable.selector
+            )
+        );
+        escrow.withdraw();
+        vm.stopPrank();
+    }
 }
