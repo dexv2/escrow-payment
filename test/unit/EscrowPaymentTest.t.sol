@@ -388,4 +388,19 @@ contract EscrowPaymentTest is Test {
         vm.prank(BUYER);
         escrow.resolveDispute(true);
     }
+
+    function testProductHasIssueReturnFeeDeductedToSeller() public allDeposited courierReceivesReturnFee {
+        _cancel(true);
+        uint256 buyerWithdrawableBefore = escrow.getAmountWithdrawable(BUYER);
+        uint256 sellerWithdrawableBefore = escrow.getAmountWithdrawable(SELLER);
+
+        vm.prank(COURIER);
+        escrow.resolveDispute(true);
+
+        uint256 buyerWithdrawableAfter = escrow.getAmountWithdrawable(BUYER);
+        uint256 sellerWithdrawableAfter = escrow.getAmountWithdrawable(SELLER);
+
+        assertEq(buyerWithdrawableAfter, buyerWithdrawableBefore);
+        assertEq(sellerWithdrawableAfter, sellerWithdrawableBefore - RETURN_SHIPPING_FEE);
+    }
 }
