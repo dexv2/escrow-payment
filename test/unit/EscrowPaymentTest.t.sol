@@ -439,4 +439,11 @@ contract EscrowPaymentTest is Test {
         vm.prank(SELLER);
         escrow.receiveReturnedProduct();
     }
+
+    function testSetsTransactionCompletedToTrueAfterReceivingReturnedProductPath1() public allDeposited {
+        _cancel(false);
+        vm.prank(SELLER);
+        escrow.receiveReturnedProduct();
+        assert(escrow.getIsTransactionCompleted());
+    }
 }
