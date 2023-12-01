@@ -457,4 +457,15 @@ contract EscrowPaymentTest is Test {
         escrow.receiveReturnedProduct();
         assert(escrow.getIsTransactionCompleted());
     }
+
+    function testSetsTransactionCompletedToTrueAfterReceivingReturnedProductPath3() public allDeposited {
+        _cancel(true);
+
+        vm.prank(COURIER);
+        escrow.resolveDispute(true);
+
+        vm.prank(SELLER);
+        escrow.receiveReturnedProduct();
+        assert(escrow.getIsTransactionCompleted());
+    }
 }
