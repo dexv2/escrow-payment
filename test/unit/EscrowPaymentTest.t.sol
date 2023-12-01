@@ -419,4 +419,14 @@ contract EscrowPaymentTest is Test {
         assertEq(buyerWithdrawableAfter, buyerWithdrawableBefore - RETURN_SHIPPING_FEE - inconvenienceFee);
         assertEq(sellerWithdrawableAfter, sellerWithdrawableBefore + inconvenienceFee);
     }
+
+    function testRevertsWithOnlySellerModifierOnReceiveReturnedProduct() public allDeposited {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__NotASeller.selector
+            )
+        );
+        vm.prank(COURIER);
+        escrow.receiveReturnedProduct();
+    }
 }
