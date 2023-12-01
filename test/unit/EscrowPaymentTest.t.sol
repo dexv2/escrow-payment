@@ -350,9 +350,8 @@ contract EscrowPaymentTest is Test {
     function testAmountDeductedToBuyerIfCancelledWithoutIssue() public allDeposited courierReceivesReturnFee {
         (uint256 buyerAmountWithdrawableBefore, uint256 buyerAmountWithdrawableAfter) = _cancelReturnsAmount(BUYER);
         uint256 inconvenienceFee = escrow.getInconvenienceFee();
-        uint256 buyerAmountWithdrawableDeducted = buyerAmountWithdrawableBefore - RETURN_SHIPPING_FEE - inconvenienceFee;
 
-        assertEq(buyerAmountWithdrawableAfter, buyerAmountWithdrawableDeducted);
+        assertEq(buyerAmountWithdrawableAfter, buyerAmountWithdrawableBefore - RETURN_SHIPPING_FEE - inconvenienceFee);
     }
 
     function testSellerReceivesInconvenienceFeeIfCancelledWithoutIssue() public allDeposited courierReceivesReturnFee {
@@ -389,7 +388,7 @@ contract EscrowPaymentTest is Test {
         escrow.resolveDispute(true);
     }
 
-    function testProductHasIssueReturnFeeDeductedToSeller() public allDeposited courierReceivesReturnFee {
+    function testResolveDisputeProductHasIssueReturnFeeDeductedToSeller() public allDeposited courierReceivesReturnFee {
         _cancel(true);
         uint256 buyerWithdrawableBefore = escrow.getAmountWithdrawable(BUYER);
         uint256 sellerWithdrawableBefore = escrow.getAmountWithdrawable(SELLER);
@@ -402,5 +401,22 @@ contract EscrowPaymentTest is Test {
 
         assertEq(buyerWithdrawableAfter, buyerWithdrawableBefore);
         assertEq(sellerWithdrawableAfter, sellerWithdrawableBefore - RETURN_SHIPPING_FEE);
+    }
+
+    function testResolveDisputeProductHasNoIssueReturnFeeAndInconvenienceFeeDeductedToBuyer() public allDeposited courierReceivesReturnFee {
+        _cancel(true);
+
+        uint256 buyerWithdrawableBefore = escrow.getAmountWithdrawable(BUYER);
+        uint256 sellerWithdrawableBefore = escrow.getAmountWithdrawable(SELLER);
+
+        vm.prank(COURIER);
+        escrow.resolveDispute(false);
+
+        uint256 buyerWithdrawableAfter = escrow.getAmountWithdrawable(BUYER);
+        uint256 sellerWithdrawableAfter = escrow.getAmountWithdrawable(SELLER);
+        uint256 inconvenienceFee = escrow.getInconvenienceFee();
+
+        assertEq(buyerWithdrawableAfter, buyerWithdrawableBefore - RETURN_SHIPPING_FEE - inconvenienceFee);
+        assertEq(sellerWithdrawableAfter, sellerWithdrawableBefore + inconvenienceFee);
     }
 }
