@@ -429,4 +429,14 @@ contract EscrowPaymentTest is Test {
         vm.prank(COURIER);
         escrow.receiveReturnedProduct();
     }
+
+    function testRevertsIfReceiveReturnedProductCalledWhenNoReturnedProduct() public allDeposited {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EscrowPayment.EscrowPayment__NoReturnProduct.selector
+            )
+        );
+        vm.prank(SELLER);
+        escrow.receiveReturnedProduct();
+    }
 }
